@@ -28,7 +28,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(message)s")
 log = logging.getLogger(__name__)
 
 # ── Paths ─────────────────────────────────────────────────────────────────────
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR     = PROJECT_ROOT / "data" / "processed"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
 FAERS_DIR    = Path("/mnt/user-data/uploads")   # adjust if running locally
