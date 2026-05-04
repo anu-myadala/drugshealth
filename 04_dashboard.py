@@ -219,6 +219,23 @@ def fig_prr_waterfall(eda: dict) -> go.Figure:
         yaxis=dict(gridcolor="rgba(255,255,255,0.05)"),
         height=400,
     )
+
+    # Add simple dropdown to highlight a specific drug (or All)
+    buttons = [
+        dict(method='restyle',
+             label='All',
+             args=[{'marker.color': [colors], 'opacity':[1.0]}]),
+    ]
+    for i, d in enumerate(drugs):
+        new_colors = [CARD_BG] * len(drugs)
+        # highlight selected drug
+        new_colors[i] = CORAL
+        buttons.append(dict(method='restyle', label=d,
+                            args=[{'marker.color': [new_colors], 'opacity':[1.0]}]))
+
+    fig.update_layout(
+        updatemenus=[dict(buttons=buttons, x=0.0, y=1.15, xanchor='left', yanchor='top')]
+    )
     return fig
 
 
