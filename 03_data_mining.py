@@ -388,8 +388,8 @@ def run_classification(fact: pd.DataFrame) -> dict:
     rf_rec   = recall_score(y_test, rf_pred)
     rf_prec  = precision_score(y_test, rf_pred)
 
-    # 5-fold CV
-    cv_rf = cross_val_score(rf, X, y, cv=StratifiedKFold(5, shuffle=True, random_state=42),
+    # 5-fold CV on training set only (prevents test-set leakage)
+    cv_rf = cross_val_score(rf, X_train, y_train, cv=StratifiedKFold(5, shuffle=True, random_state=42),
                              scoring="roc_auc", n_jobs=-1)
     print(f"\n  Random Forest: AUC={rf_auc:.4f} F1={rf_f1:.4f} Recall={rf_rec:.4f}")
     print(f"  5-fold CV AUC: {cv_rf.mean():.4f} ±{cv_rf.std():.4f}")

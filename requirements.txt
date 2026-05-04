@@ -10,3 +10,4 @@ joblib
 plotly
 python-pptx
 lxml
+streamlit

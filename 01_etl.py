@@ -212,11 +212,31 @@ def process_quarter(zip_path: Path) -> dict[str, pd.DataFrame]:
     worst_outc["severity_label"] = worst_outc["outc_cod"].map(OUTC_SEVERITY)
     worst_outc["severity_flag"]  = worst_outc["outc_cod"].isin(SERIOUS_CODES).astype(int)
 
-    # ── THER: compute time-to-onset ────────────────────────────────────────
+    # ── THER: compute time-to-onset linked to GLP-1 drug sequence ─────────
     # Parse therapy start date robustly (accept YYYYMMDD numeric or text)
     ther["start_dt_parsed"] = pd.to_datetime(ther["start_dt"].astype(str).str.replace(r'\.0+$','', regex=True),
                                               format="%Y%m%d", errors="coerce")
-    time_onset = ther.groupby("primaryid")["start_dt_parsed"].min().reset_index()
+    # Map therapy start date only for the GLP-1 drug using sequence ID linkage
+    # (FAERS THER.dsg_drug_seq maps to DRUG.drug_seq)
+    if "drug_seq" in drug.columns and "dsg_drug_seq" in ther.columns:
+        glp1_seqs = drug[drug["is_glp1"]][["primaryid", "drug_seq"]].copy()
+        glp1_seqs["drug_seq"] = glp1_seqs["drug_seq"].astype(str).str.strip()
+        ther_keyed = ther.copy()
+        ther_keyed["dsg_drug_seq"] = ther_keyed["dsg_drug_seq"].astype(str).str.strip()
+        ther_glp1 = ther_keyed.merge(
+            glp1_seqs,
+            left_on=["primaryid", "dsg_drug_seq"],
+            right_on=["primaryid", "drug_seq"],
+            how="inner"
+        )
+        if not ther_glp1.empty:
+            time_onset = ther_glp1.groupby("primaryid")["start_dt_parsed"].min().reset_index()
+        else:
+            # Fallback: use earliest therapy date across all drugs for this patient
+            time_onset = ther.groupby("primaryid")["start_dt_parsed"].min().reset_index()
+    else:
+        # Fallback when sequence columns are absent
+        time_onset = ther.groupby("primaryid")["start_dt_parsed"].min().reset_index()
     time_onset.columns = ["primaryid", "drug_start_date"]
 
     # ── Build cohort DEMO slice ────────────────────────────────────────────
@@ -330,6 +350,12 @@ def run_etl() -> pd.DataFrame:
                       .drop_duplicates(subset="caseid", keep="first")
                       .reset_index(drop=True))
     log.info(f"  Deduplication: {before:,} → {len(fact_df):,} rows ({before-len(fact_df):,} removed)")
+
+    # ── Filter dimension tables to match deduplicated cases ─────────────────
+    log.info("  Filtering dimension tables to match deduplicated cases...")
+    valid_pids = set(fact_df["primaryid"])
+    drug_df = drug_df[drug_df["primaryid"].isin(valid_pids)].reset_index(drop=True)
+    reac_df = reac_df[reac_df["primaryid"].isin(valid_pids)].reset_index(drop=True)
 
     # ── Imputation: age and weight, grouped by sex and cohort ───────────────
     log.info("Median imputation for age and weight ...")
