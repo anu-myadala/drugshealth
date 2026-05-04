@@ -918,62 +918,66 @@ def build_presentation():
         ("Thank You / Q&A",          slide_thankyou),
     ]
 
-    # Speaker notes for each slide (concise bullets to guide presenter)
+    # Speaker notes for each slide (expanded, includes methods and validation detail)
     slide_notes = {
         "Title & Introduction": (
-            "Introduce the study objective: quantify GI risk with GLP-1s using FAERS 2023Q1–2026Q1.\n"
-            "Explain star-schema ETL and cohorts (GLP-1 vs metformin controls)."
+            "Introduce the study objective: quantify GI adverse-event risk associated with GLP-1 receptor agonists "
+            "using FDA FAERS 2023Q1–2026Q1 (13 quarters).\n"
+            "Briefly describe the star-schema ETL (fact_adverse_event) and cohorts: GLP-1 vs metformin-class controls.\n"
+            "State this is a pharmacovigilance surveillance analysis — signals warrant further epidemiologic validation."
         ),
         "Problem Statement": (
-            "Motivate clinical concern: rapid GLP-1 uptake vs unclear GI safety in real-world data.\n"
-            "State hypothesis and targets: PRR signal detection and severity prediction."
+            "Context: rapid clinical adoption of GLP-1s for weight loss + diabetes and incomplete real-world GI safety profile.\n"
+            "Primary aims: 1) Detect disproportionality (PRR) for severe GI MedDRA PTs vs controls; 2) Identify high-risk phenotypes via clustering; "
+            "3) Build predictive models for severe outcomes (hospitalization/lt/death)."
         ),
         "Data Sources": (
-            "Describe FAERS tables used (DEMO, DRUG, REAC, OUTC, THER).\n"
-            "Confirm 13 quarters included; note limitations of spontaneous reporting."
+            "FAERS ASCII tables used: DEMO (demographics), DRUG (med list & roles), REAC (MedDRA PTs), OUTC (outcomes codes), THER (therapy dates).\n"
+            "13 quarters processed; note limitations: voluntary reporting, under-reporting, lack of denominators, possible duplicate reports despite deduplication."
         ),
         "Data Warehouse Design": (
-            "Walk through star schema: fact table + patient/drug/reaction/time dims.\n"
-            "Mention storage options (SQLite dev, Postgres prod)."
+            "Explain the star schema: FACT_ADVERSE_EVENT keyed to patient/drug/reaction/time dims to enable fast cohort queries and reproducible analytics.\n"
+            "Note dev storage uses SQLite; production should use Postgres or similar for concurrency and scale."
         ),
         "Data Preprocessing": (
-            "Explain deduplication, drug filtering, MedDRA GI mapping, imputation strategies.\n"
-            "Highlight time-to-onset and polypharmacy computation."
+            "Steps: 1) Quarter-by-quarter read of FAERS zips; 2) Deduplicate by caseid keeping latest fda_dt globally; 3) Drug filtering for GLP-1 and control lists; "
+            "4) MedDRA PT mapping for GI severe & GI-broad; 5) Therapy start parsing and time-to-onset (TTO) computation; 6) Median imputation for age/weight grouped by sex×cohort.\n"
+            "Key choices and rationale: median imputation to preserve distribution, TTO plausibility bounds (configurable via TTO_MIN_DAYS/TTO_MAX_DAYS), and conservative GI PT list to reduce false positives."
         ),
         "EDA & Statistical Tests": (
-            "Outline tests: Chi-Square (cohort × GI), PRR (signal), Mann-Whitney (weight).\n"
-            "State key numerical results and interpretation for regulators/clinicians."
+            "Describe calculations: descriptive counts, Chi-Square (cohort × GI), PRR with Wald 95% CI, and Mann–Whitney U for continuous comparisons (weight).\n"
+            "Interpretation guidance: PRR > 2 plus χ² > 4 and n ≥ 3 meets WHO-UMC signal criteria; emphasize that PRR is a relative disproportionality metric, not an incidence rate."
         ),
         "Visualization Dashboard": (
-            "Demonstrate the interactive dashboard: filters, risk calculator, drill-downs.\n"
-            "Highlight how audience can explore PRR per drug and temporal trends."
+            "Demonstrate the Streamlit dashboard: cross-filters for drug/country/quarter, interactive PRR by drug with WHO-UMC threshold lines, and a live RF risk calculator.\n"
+            "Note: dashboard uses the processed fact table and model artifacts saved under /models; the enhanced Chart.js HTML is provided for static presentation."
         ),
         "Apriori Rules": (
-            "Describe market-basket setup and interpretation of support/confidence/lift.\n"
-            "Call out top rules (GLP-1 + opioid → GI severe / hospitalization)."
+            "Explain market-basket setup: transaction = patient concurrent drug set + outcome labels; parameters: min_support=0.02, min_confidence=0.40, min_lift=1.3.\n"
+            "Interpretation: these are associations in spontaneous reports — causal claims require external validation and adjustment for confounders."
         ),
         "K-Means Clustering": (
-            "Explain features used and optimal k selection (silhouette).\n"
-            "Summarize identified phenotypes and recommended monitoring actions."
+            "Clustering features: standardized age, weight, polypharmacy_count, concurrent_opioid, time_to_onset, sex.\n"
+            "k selection: silhouette method; standard scaling before KMeans; clusters profiled by median/percentiles. Provide actionable phenotype descriptions for monitoring."
         ),
         "LR + Random Forest": (
-            "LR: interpretable ORs for communication. RF: higher recall — preferred for surveillance.\n"
-            "Explain primary metric (recall) and why it matters clinically."
+            "Modeling details for presenters: LR used for interpretability (coefficients → ORs); RF used for higher recall in surveillance.\n"
+            "Training: train/test split, 5-fold CV for RF AUC reporting. Primary metric = recall (minimize false negatives). Feature engineering: log(poly), age×weight interaction, label encoding for glp1_drug. Hyperparameters: RF default sklearn params with n_estimators tuned via grid search (saved in mining_results.json)."
         ),
         "Results & Evaluation": (
-            "Synthesize findings: PRR signal, clustering phenotypes, model performance.\n"
-            "State caveats: reporting bias, inability to compute absolute incidence from FAERS."
+            "Summarize key findings: PRR result and whether WHO-UMC signal criteria met; top apriori rules; cluster profiles; model metrics (AUC, recall, F1) with CV ranges.\n"
+            "Validation notes: 1) 5-fold CV on training set for RF CV AUC ± std reported; 2) Confusion matrix and calibration plots in reports/figures; 3) Sensitivity checks: alternative GI term sets and TTO bounds were tested (see METHODS document)."
         ),
         "Conclusions": (
-            "Reiterate main takeaway: pharmacovigilance signal detected; high-risk subgroups identified.\n"
-            "Recommend targeted monitoring and further clinical validation."
+            "Conclude with evidence strength and recommended operational actions: enhanced monitoring for GLP-1 + opioid, consider dose review and EHR linkage for incidence validation.\n"
+            "Caveat: FAERS-based signals require confirmation via EHR/claims studies before changes to prescribing guidance."
         ),
         "Future Work": (
-            "List practical next steps: scale to full FAERS, NLP on narratives, EHR validation, REST API.\n"
-            "Emphasize opportunities for thesis/continuation work."
+            "Roadmap: scale ETL (Spark), apply NLP to narratives (BioBERT), serve RF via REST API for EHR integration, and cross-validate against OMOP/claims.\n"
+            "Discuss timelines and resource needs briefly to prompt discussion."
         ),
         "Thank You / Q&A": (
-            "Invite questions. Provide contact, GitHub repo, and pointers to the interactive dashboard."
+            "Invite questions and provide links to GitHub, the enhanced dashboard HTML, and instructions for reproducing the analysis (see DEPLOYMENT.md and reports/METHODS_VALIDATION.md)."
         ),
     }
 
