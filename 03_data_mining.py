@@ -45,7 +45,7 @@ from mlxtend.preprocessing import TransactionEncoder
 warnings.filterwarnings("ignore")
 sns.set_theme(style="whitegrid", font_scale=1.0)
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR  = PROJECT_ROOT / "data" / "processed"
 FIG_DIR   = PROJECT_ROOT / "reports" / "figures"
 MODEL_DIR = PROJECT_ROOT / "models"
