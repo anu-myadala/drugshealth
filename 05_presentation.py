@@ -181,7 +181,12 @@ def add_stat_card(slide, value: str, label: str, left, top,
 def try_add_image(slide, img_name: str, left, top, width, height):
     path = FIG_DIR / img_name
     if path.exists():
-        slide.shapes.add_picture(str(path), left, top, width, height)
+        # Add picture but ensure it doesn't overflow slide bounds
+        max_w = SLIDE_W - left - Inches(0.4)
+        max_h = SLIDE_H - top - Inches(0.4)
+        w = min(width, max_w)
+        h = min(height, max_h)
+        slide.shapes.add_picture(str(path), left, top, w, h)
     else:
         # Placeholder box
         add_rect(slide, left, top, width, height,
@@ -190,6 +195,19 @@ def try_add_image(slide, img_name: str, left, top, width, height):
                  left + Inches(0.1), top + Inches(0.05),
                  width - Inches(0.2), height - Inches(0.1),
                  font_size=11, color=MUTED, align=PP_ALIGN.CENTER)
+
+
+def add_speaker_notes(slide, notes: str):
+    """Attach speaker notes to a slide (keeps the slide content uncluttered)."""
+    try:
+        notes_slide = slide.notes_slide
+        text_frame = notes_slide.notes_text_frame
+        text_frame.clear()
+        p = text_frame.paragraphs[0]
+        p.text = notes
+    except Exception:
+        # Some pptx versions may behave differently; ignore silently
+        pass
 
 
 # ── SLIDES ────────────────────────────────────────────────────────────────────
@@ -882,7 +900,6 @@ def slide_thankyou(prs, eda, mining):
 def build_presentation():
     eda, mining = load_results()
     prs = new_prs()
-
     print("Building slides …")
     slide_builders = [
         ("Title & Introduction",     slide_title),
@@ -901,9 +918,76 @@ def build_presentation():
         ("Thank You / Q&A",          slide_thankyou),
     ]
 
+    # Speaker notes for each slide (concise bullets to guide presenter)
+    slide_notes = {
+        "Title & Introduction": (
+            "Introduce the study objective: quantify GI risk with GLP-1s using FAERS 2023Q1–2026Q1.\n"
+            "Explain star-schema ETL and cohorts (GLP-1 vs metformin controls)."
+        ),
+        "Problem Statement": (
+            "Motivate clinical concern: rapid GLP-1 uptake vs unclear GI safety in real-world data.\n"
+            "State hypothesis and targets: PRR signal detection and severity prediction."
+        ),
+        "Data Sources": (
+            "Describe FAERS tables used (DEMO, DRUG, REAC, OUTC, THER).\n"
+            "Confirm 13 quarters included; note limitations of spontaneous reporting."
+        ),
+        "Data Warehouse Design": (
+            "Walk through star schema: fact table + patient/drug/reaction/time dims.\n"
+            "Mention storage options (SQLite dev, Postgres prod)."
+        ),
+        "Data Preprocessing": (
+            "Explain deduplication, drug filtering, MedDRA GI mapping, imputation strategies.\n"
+            "Highlight time-to-onset and polypharmacy computation."
+        ),
+        "EDA & Statistical Tests": (
+            "Outline tests: Chi-Square (cohort × GI), PRR (signal), Mann-Whitney (weight).\n"
+            "State key numerical results and interpretation for regulators/clinicians."
+        ),
+        "Visualization Dashboard": (
+            "Demonstrate the interactive dashboard: filters, risk calculator, drill-downs.\n"
+            "Highlight how audience can explore PRR per drug and temporal trends."
+        ),
+        "Apriori Rules": (
+            "Describe market-basket setup and interpretation of support/confidence/lift.\n"
+            "Call out top rules (GLP-1 + opioid → GI severe / hospitalization)."
+        ),
+        "K-Means Clustering": (
+            "Explain features used and optimal k selection (silhouette).\n"
+            "Summarize identified phenotypes and recommended monitoring actions."
+        ),
+        "LR + Random Forest": (
+            "LR: interpretable ORs for communication. RF: higher recall — preferred for surveillance.\n"
+            "Explain primary metric (recall) and why it matters clinically."
+        ),
+        "Results & Evaluation": (
+            "Synthesize findings: PRR signal, clustering phenotypes, model performance.\n"
+            "State caveats: reporting bias, inability to compute absolute incidence from FAERS."
+        ),
+        "Conclusions": (
+            "Reiterate main takeaway: pharmacovigilance signal detected; high-risk subgroups identified.\n"
+            "Recommend targeted monitoring and further clinical validation."
+        ),
+        "Future Work": (
+            "List practical next steps: scale to full FAERS, NLP on narratives, EHR validation, REST API.\n"
+            "Emphasize opportunities for thesis/continuation work."
+        ),
+        "Thank You / Q&A": (
+            "Invite questions. Provide contact, GitHub repo, and pointers to the interactive dashboard."
+        ),
+    }
+
     for title, fn in slide_builders:
         print(f"  Slide: {title}")
         fn(prs, eda, mining)
+        # Attach speaker notes to the most recently added slide
+        try:
+            last_slide = prs.slides[-1]
+            notes = slide_notes.get(title, "")
+            if notes:
+                add_speaker_notes(last_slide, notes)
+        except Exception:
+            pass
 
     prs.save(str(OUT_PATH))
     print(f"\n✅ Presentation saved to: {OUT_PATH}")

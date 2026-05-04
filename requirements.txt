@@ -1,0 +1,12 @@
+pandas
+numpy
+sqlalchemy
+scipy
+matplotlib
+seaborn
+scikit-learn
+mlxtend
+joblib
+plotly
+python-pptx
+lxml

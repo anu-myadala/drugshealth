@@ -185,21 +185,62 @@ def run_kmeans(fact: pd.DataFrame) -> pd.DataFrame:
 
     sc = StandardScaler()
     Xs = sc.fit_transform(X)
+    # Elbow + silhouette with robustness for small / problematic data
+    n_samples = Xs.shape[0]
+    print(f"  GLP-1 cohort samples for clustering: {n_samples}")
+    if n_samples < 4:
+        # Not enough samples to run reliable KMeans+silhouette analysis
+        print("  Not enough samples for K-Means clustering (need >=4). Skipping clustering.")
+        glp1["cluster"] = 0
+        glp1["cluster_name"] = "Insufficient data"
+        return glp1, {"silhouette": np.nan, "davies_bouldin": np.nan,
+                      "best_k": 1, "cluster_names": {0: "Insufficient data"},
+                      "profile": {}}
 
-    # Elbow + silhouette
     inertias, silhouettes = [], []
     K_RANGE = range(2, 9)
     for k in K_RANGE:
-        km = KMeans(n_clusters=k, random_state=42, n_init=10)
-        labels = km.fit_predict(Xs)
-        inertias.append(km.inertia_)
-        silhouettes.append(silhouette_score(Xs, labels))
+        if k >= n_samples:
+            # silhouette_score requires at least 2 clusters and fewer clusters than samples
+            print(f"  Skipping k={k} because k >= n_samples ({n_samples})")
+            continue
+        try:
+            km = KMeans(n_clusters=k, random_state=42, n_init=10)
+            labels = km.fit_predict(Xs)
+            inertias.append(km.inertia_)
+            # silhouette_score may fail if cluster labels are degenerate; catch it
+            try:
+                sil = silhouette_score(Xs, labels)
+            except Exception as e:
+                print(f"  silhouette_score failed for k={k}: {e}")
+                sil = -1.0
+            silhouettes.append(sil)
+        except Exception as e:
+            print(f"  KMeans failed for k={k}: {e}")
+            continue
 
-    best_k = silhouettes.index(max(silhouettes)) + 2
-    print(f"  Optimal k by silhouette: {best_k} (score={max(silhouettes):.4f})")
+    # Choose best_k from valid silhouette scores
+    valid = [s for s in silhouettes if s is not None and s > -0.5]
+    if valid:
+        best_idx = silhouettes.index(max(silhouettes))
+        best_k = list(K_RANGE)[best_idx]
+        best_score = silhouettes[best_idx]
+        print(f"  Optimal k by silhouette: {best_k} (score={best_score:.4f})")
+    else:
+        # Fallback: choose a small k that's less than n_samples
+        best_k = min(3, max(2, n_samples // 2))
+        best_k = min(best_k, n_samples - 1)
+        print(f"  No valid silhouette scores found. Falling back to k={best_k}")
 
-    km_final = KMeans(n_clusters=best_k, random_state=42, n_init=10)
-    glp1["cluster"] = km_final.fit_predict(Xs)
+    try:
+        km_final = KMeans(n_clusters=best_k, random_state=42, n_init=10)
+        glp1["cluster"] = km_final.fit_predict(Xs)
+    except Exception as e:
+        print(f"  Final KMeans fit failed for k={best_k}: {e}")
+        glp1["cluster"] = 0
+        glp1["cluster_name"] = "Clustering failed"
+        return glp1, {"silhouette": np.nan, "davies_bouldin": np.nan,
+                      "best_k": best_k, "cluster_names": {}, "profile": {}}
 
     sil  = silhouette_score(Xs, glp1["cluster"])
     db   = davies_bouldin_score(Xs, glp1["cluster"])
