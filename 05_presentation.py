@@ -40,7 +40,7 @@ except ImportError:
     print("ERROR: python-pptx not installed. Run: pip install python-pptx")
     sys.exit(1)
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parent
 FIG_DIR   = PROJECT_ROOT / "reports" / "figures"
 REPORT_DIR = PROJECT_ROOT / "reports"
 DATA_DIR  = PROJECT_ROOT / "data" / "processed"
@@ -613,10 +613,13 @@ def slide_kmeans(prs, eda, mining):
     db     = clust.get("davies_bouldin", "—")
     names  = clust.get("cluster_names", {0:"Low-Risk Stable",1:"Moderate-Risk Active",2:"High-Risk Vulnerable"})
 
+    sil_str = f"{sil:.3f}" if isinstance(sil, float) else str(sil)
+    db_str  = f"{db:.3f}"  if isinstance(db,  float) else str(db)
+
     add_text(s,
              f"Features: Age, Weight, Polypharmacy Count, Concurrent Opioid, Time-to-Onset, Sex\n"
-             f"Optimal k={best_k} (silhouette method)  ·  Silhouette = {sil:.3f if isinstance(sil,float) else sil}  "
-             f"·  Davies-Bouldin = {db:.3f if isinstance(db,float) else db}\n"
+             f"Optimal k={best_k} (silhouette method)  ·  Silhouette = {sil_str}  "
+             f"·  Davies-Bouldin = {db_str}\n"
              "StandardScaler normalization applied before KMeans (n_init=10, random_state=42)",
              Inches(0.5), Inches(1.55), Inches(8.5), Inches(0.85),
              font_size=12.5, color=WHITE)

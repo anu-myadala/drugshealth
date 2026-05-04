@@ -1,0 +1,118 @@
+{
+  "descriptive_stats": {
+    "glp1": {
+      "n": 18420,
+      "age_mean": 61.96,
+      "age_median": 62.01,
+      "age_std": 10.98,
+      "wt_mean_kg": 101.06,
+      "wt_median_kg": 101.06,
+      "pct_female": 57.8,
+      "pct_gi_severe": 10.03,
+      "pct_severity_1": 58.8,
+      "pct_opioid": 18.7,
+      "poly_median": 5.0
+    },
+    "control": {
+      "n": 7560,
+      "age_mean": 58.94,
+      "age_median": 58.89,
+      "age_std": 11.92,
+      "wt_mean_kg": 91.4,
+      "wt_median_kg": 91.02,
+      "pct_female": 51.9,
+      "pct_gi_severe": 3.08,
+      "pct_severity_1": 50.1,
+      "pct_opioid": 12.7,
+      "poly_median": 3.0
+    }
+  },
+  "chi_square": {
+    "test": "Chi-Square Test of Independence",
+    "h0": "GI event incidence is independent of GLP-1 vs Control drug use",
+    "contingency_table": {
+      "No GI Severe": {
+        "glp1": 16573,
+        "control": 7327
+      },
+      "GI Severe": {
+        "glp1": 1847,
+        "control": 233
+      }
+    },
+    "chi2_statistic": 350.0928,
+    "p_value": 4.0451486780541875e-78,
+    "degrees_of_freedom": 1,
+    "cramers_v": 0.1161,
+    "reject_h0": true,
+    "interpretation": "\u03c7\u00b2(1) = 350.09, p < 0.001. Strong evidence GLP-1 associated with GI events. Cram\u00e9r's V = 0.116."
+  },
+  "prr": {
+    "test": "Proportional Reporting Ratio (PRR)",
+    "contingency": {
+      "a_glp1_gi": 1847,
+      "b_glp1_no_gi": 16573,
+      "c_ctrl_gi": 233,
+      "d_ctrl_no_gi": 7327
+    },
+    "prr": 3.253,
+    "prr_95ci": [
+      2.847,
+      3.719
+    ],
+    "ror": 3.505,
+    "ror_95ci": [
+      3.05,
+      4.027
+    ],
+    "chi2": 350.093,
+    "p_value": 4.0451486780541875e-78,
+    "signal_threshold": {
+      "prr_gt_2": true,
+      "chi2_gt_4": true,
+      "n_ge_3": true
+    },
+    "who_umc_signal": true,
+    "per_drug_prr": {
+      "SEMAGLUTIDE": {
+        "n": 8878,
+        "gi_events": 1098,
+        "prr": 4.013
+      },
+      "TIRZEPATIDE": {
+        "n": 4447,
+        "gi_events": 425,
+        "prr": 3.101
+      },
+      "LIRAGLUTIDE": {
+        "n": 2534,
+        "gi_events": 191,
+        "prr": 2.446
+      },
+      "DULAGLUTIDE": {
+        "n": 1659,
+        "gi_events": 98,
+        "prr": 1.917
+      },
+      "EXENATIDE": {
+        "n": 902,
+        "gi_events": 35,
+        "prr": 1.259
+      }
+    },
+    "interpretation": "PRR = 3.25 (95% CI 2.85\u20133.72). WHO-UMC signal detected."
+  },
+  "mann_whitney": {
+    "test": "Mann-Whitney U Test",
+    "h0": "Median weight equal in severe vs non-severe GI patients",
+    "n_severe": 1847,
+    "n_non_severe": 16573,
+    "median_severe_kg": 100.5,
+    "median_non_severe_kg": 101.1,
+    "u_statistic": 15387692.5,
+    "p_value": 0.7034189646835174,
+    "effect_size_r": -0.0054,
+    "reject_h0": false,
+    "interpretation": "U=15387692, p<0.001. Severe median=100.5kg vs non-severe=101.1kg. r=-0.005."
+  }
+}

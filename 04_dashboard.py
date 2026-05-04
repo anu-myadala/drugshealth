@@ -27,7 +27,7 @@ import plotly.io as pio
 
 warnings.filterwarnings("ignore")
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR  = PROJECT_ROOT / "data" / "processed"
 MODEL_DIR = PROJECT_ROOT / "models"
 REPORT_DIR = PROJECT_ROOT / "reports"
@@ -236,7 +236,7 @@ def fig_weight_boxplot(fact: pd.DataFrame) -> go.Figure:
             fig.add_trace(go.Box(
                 y=sub["wt_kg"], name=f"{cohort} / {gi}",
                 marker_color=color,
-                line=dict(dash=dash),
+                line=dict(width=2 if gi=="GI Severe" else 1),
                 boxmean="sd",
                 opacity=0.8 if gi=="GI Severe" else 0.5,
             ))
