@@ -213,9 +213,11 @@ def process_quarter(zip_path: Path) -> dict[str, pd.DataFrame]:
     worst_outc["severity_flag"]  = worst_outc["outc_cod"].isin(SERIOUS_CODES).astype(int)
 
     # ── THER: compute time-to-onset ────────────────────────────────────────
-    ther["start_dt_n"] = pd.to_numeric(ther["start_dt"], errors="coerce")
-    time_onset = ther.groupby("primaryid")["start_dt_n"].min().reset_index()
-    time_onset.columns = ["primaryid", "drug_start_dt"]
+    # Parse therapy start date robustly (accept YYYYMMDD numeric or text)
+    ther["start_dt_parsed"] = pd.to_datetime(ther["start_dt"].astype(str).str.replace(r'\.0+$','', regex=True),
+                                              format="%Y%m%d", errors="coerce")
+    time_onset = ther.groupby("primaryid")["start_dt_parsed"].min().reset_index()
+    time_onset.columns = ["primaryid", "drug_start_date"]
 
     # ── Build cohort DEMO slice ────────────────────────────────────────────
     cohort_demo = demo[demo["primaryid"].isin(all_pids)].copy()
@@ -234,11 +236,16 @@ def process_quarter(zip_path: Path) -> dict[str, pd.DataFrame]:
     )
     cohort_demo["sex_clean"] = cohort_demo["sex"].map(
         {"F": "Female", "M": "Male", "UNK": "Unknown"}).fillna("Unknown")
-    cohort_demo["event_dt_n"] = pd.to_numeric(cohort_demo["event_dt"], errors="coerce")
+    # Parse event date robustly
+    cohort_demo["event_date"] = pd.to_datetime(cohort_demo["event_dt"].astype(str).str.replace(r'\.0+$','', regex=True),
+                                                  format="%Y%m%d", errors="coerce")
+
+    # Clip implausible weights to NaN (will be median-imputed later)
+    cohort_demo["wt_kg"] = cohort_demo["wt_kg"].where(cohort_demo["wt_kg"].between(30, 300), np.nan)
 
     # ── Assemble fact rows ─────────────────────────────────────────────────
     fact = cohort_demo[["primaryid", "caseid", "age_yr", "wt_kg", "sex_clean",
-                         "event_dt_n", "fda_dt", "reporter_country", "occr_country"]].copy()
+                         "event_date", "fda_dt", "reporter_country", "occr_country"]].copy()
     fact["quarter"] = quarter
 
     # Cohort label
@@ -268,10 +275,10 @@ def process_quarter(zip_path: Path) -> dict[str, pd.DataFrame]:
 
     # Merge therapy start date for time-to-onset computation later
     fact = fact.merge(time_onset, on="primaryid", how="left")
-    fact["time_to_onset_days"] = (
-        (fact["event_dt_n"] - fact["drug_start_dt"])
-        .apply(lambda x: _yyyymmdd_diff_days(x) if pd.notna(x) else np.nan)
-    )
+    # Compute time_to_onset in days using real datetime difference when available
+    fact["time_to_onset_days"] = (fact["event_date"] - fact["drug_start_date"]).dt.days
+    # If any remaining invalid or extreme values, set to NaN
+    fact.loc[(fact["time_to_onset_days"] < -3650) | (fact["time_to_onset_days"] > 3650), "time_to_onset_days"] = np.nan
 
     # GI reaction term (primary term if multiple)
     gi_term_map = (reac[reac["is_gi_severe"]]
