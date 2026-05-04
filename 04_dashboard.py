@@ -621,53 +621,59 @@ def build_risk_calculator_html(models: dict, fact: pd.DataFrame) -> str:
     document.getElementById('poly-val').textContent = poly;
     document.getElementById('tto-val').textContent  = tto;
 
-    // Simplified RF approximation using feature importances
-    // (matches trained model's coefficient directions)
-    let base = 0.28;  // mean positive rate in dataset
-    const logistic = (x) => 1 / (1 + Math.exp(-x));
+    // Build lookup key from age and polypharmacy buckets (mirrors the Python build_risk_calculator_html logic)
+    const ageCut  = age < 40 ? 40 : age < 55 ? 55 : age < 65 ? 65 : 75;
+    const polyCut = poly <= 1 ? 1 : poly <= 3 ? 3 : poly <= 5 ? 5 : 8;
+    const lookupKey = ageCut + '_' + polyCut;
 
-    let score = 0;
-    // Age risk (non-linear: peaks 65-75)
-    if (age < 40)       score += -0.15;
-    else if (age < 55)  score += 0.05;
-    else if (age < 65)  score += 0.20;
-    else if (age < 75)  score += 0.35;
-    else                score += 0.28;
+    let prob = LOOKUP[lookupKey];
 
-    // Weight (higher BMI proxy = higher risk)
-    if (wt < 70)        score += -0.10;
-    else if (wt < 90)   score += 0.05;
-    else if (wt < 120)  score += 0.15;
-    else                score += 0.28;
+    if (prob === undefined) {{
+      // Fallback heuristic when the specific combination wasn't seen in training
+      const logistic = (x) => 1 / (1 + Math.exp(-x));
+      let score = 0;
+      // Age risk (non-linear: peaks 65-75)
+      if (age < 40)       score += -0.15;
+      else if (age < 55)  score += 0.05;
+      else if (age < 65)  score += 0.20;
+      else if (age < 75)  score += 0.35;
+      else                score += 0.28;
 
-    // Polypharmacy (major driver)
-    score += Math.min(poly * 0.06, 0.50);
+      // Weight (higher BMI proxy = higher risk)
+      if (wt < 70)        score += -0.10;
+      else if (wt < 90)   score += 0.05;
+      else if (wt < 120)  score += 0.15;
+      else                score += 0.28;
 
-    // Opioid (strong confound)
-    score += opioid * 0.30;
+      // Polypharmacy (major driver)
+      score += Math.min(poly * 0.06, 0.50);
 
-    // GI severe already reported
-    score += gi * 0.40;
+      // Opioid (strong confound)
+      score += opioid * 0.30;
 
-    // Sex (females slightly higher report rate)
-    score += sex * 0.05;
+      // GI severe already reported
+      score += gi * 0.40;
 
-    // Time to onset (shorter = more acute)
-    if (tto < 30)       score += 0.20;
-    else if (tto < 90)  score += 0.10;
-    else if (tto < 180) score += 0.05;
-    else                score += -0.05;
+      // Sex (females slightly higher report rate)
+      score += sex * 0.05;
 
-    // Drug-specific risk
-    const drug_adj = [0.15, 0.10, 0.05, -0.05, -0.08];
-    score += drug_adj[drug] || 0;
+      // Time to onset (shorter = more acute)
+      if (tto < 30)       score += 0.20;
+      else if (tto < 90)  score += 0.10;
+      else if (tto < 180) score += 0.05;
+      else                score += -0.05;
 
-    // US reporting (higher report rate, lower severity)
-    score += isUs * -0.05;
+      // Drug-specific risk
+      const drug_adj = [0.15, 0.10, 0.05, -0.05, -0.08];
+      score += drug_adj[drug] || 0;
 
-    // Convert to probability
-    const prob = Math.min(0.97, Math.max(0.01, logistic(score)));
-    const pct  = (prob * 100).toFixed(1);
+      // US reporting (higher report rate, lower severity)
+      score += isUs * -0.05;
+
+      prob = Math.min(0.97, Math.max(0.01, logistic(score)));
+    }}
+
+    const pct = (prob * 100).toFixed(1);
 
     document.getElementById('rc-prob-pct').textContent = pct + '%';
     document.getElementById('rc-prob-pct').style.color =

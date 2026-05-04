@@ -41,7 +41,7 @@ PALETTE = {"glp1": GLP1_COLOR, "control": CTRL_COLOR}
 
 def load_data() -> pd.DataFrame:
     df = pd.read_csv(DATA_DIR / "fact_adverse_event.csv", dtype={"primaryid": str, "caseid": str})
-    df["fda_dt_n"] = pd.to_numeric(df.get("fda_dt", pd.Series()), errors="coerce")
+    df["fda_dt_n"] = pd.to_numeric(df.get("fda_dt", pd.Series(dtype=float)), errors="coerce")
     return df
 
 
@@ -124,10 +124,15 @@ def calculate_prr(df: pd.DataFrame) -> dict:
     d = int((ctrl["gi_severe_flag"] == 0).sum()) # Control without GI event
 
     prr = (a / (a + b)) / (c / (c + d)) if c > 0 else float("inf")
-    # 95% CI for PRR using log-normal approximation
-    se_log_prr = np.sqrt(1/a - 1/(a+b) + 1/c - 1/(c+d)) if a > 0 and c > 0 else np.nan
-    prr_lower  = np.exp(np.log(prr) - 1.96 * se_log_prr) if not np.isnan(se_log_prr) else np.nan
-    prr_upper  = np.exp(np.log(prr) + 1.96 * se_log_prr) if not np.isnan(se_log_prr) else np.nan
+    # 95% CI for PRR using log-normal approximation; guard against log(0) when a or c is zero
+    if a > 0 and c > 0:
+        se_log_prr = np.sqrt(1/a - 1/(a+b) + 1/c - 1/(c+d))
+        prr_lower  = np.exp(np.log(prr) - 1.96 * se_log_prr)
+        prr_upper  = np.exp(np.log(prr) + 1.96 * se_log_prr)
+    else:
+        se_log_prr = np.nan
+        prr_lower  = np.nan
+        prr_upper  = np.nan
 
     # Reporting Odds Ratio
     ror = (a * d) / (b * c) if b > 0 and c > 0 and d > 0 else float("inf")
@@ -158,13 +163,13 @@ def calculate_prr(df: pd.DataFrame) -> dict:
         "ror_95ci": [round(float(ror_lower), 3), round(float(ror_upper), 3)],
         "chi2": round(float(chi2), 3),
         "p_value": float(p),
-        "signal_threshold": {"prr_gt_2": prr > 2, "chi2_gt_4": chi2 > 4, "n_ge_3": a >= 3},
-        "who_umc_signal": prr > 2 and chi2 > 4 and a >= 3,
+        "signal_threshold": {"prr_ge_2": prr >= 2.0, "chi2_ge_4": chi2 >= 4.0, "n_ge_3": a >= 3},
+        "who_umc_signal": prr >= 2.0 and chi2 >= 4.0 and a >= 3,
         "per_drug_prr": per_drug_prr,
         "interpretation": (
             f"PRR = {prr:.2f} (95% CI {prr_lower:.2f}–{prr_upper:.2f}). "
             f"ROR = {ror:.2f} (95% CI {ror_lower:.2f}–{ror_upper:.2f}). "
-            f"{'WHO-UMC regulatory signal detected (PRR>2, χ²>4, n≥3).' if prr>2 and chi2>4 and a>=3 else 'Signal below WHO-UMC threshold.'}"
+            f"{'WHO-UMC regulatory signal detected (PRR≥2, χ²≥4, n≥3).' if prr>=2.0 and chi2>=4.0 and a>=3 else 'Signal below WHO-UMC threshold.'}"
         ),
     }
     print(f"\nPRR Analysis:")
