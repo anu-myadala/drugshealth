@@ -40,7 +40,7 @@ except ImportError:
     print("ERROR: python-pptx not installed. Run: pip install python-pptx")
     sys.exit(1)
 
-PROJECT_ROOT = Path(__file__).resolve().parents[1]
+PROJECT_ROOT = Path(__file__).resolve().parent
 FIG_DIR   = PROJECT_ROOT / "reports" / "figures"
 REPORT_DIR = PROJECT_ROOT / "reports"
 DATA_DIR  = PROJECT_ROOT / "data" / "processed"
