@@ -462,9 +462,96 @@ function buildDonut(){
   const c=document.getElementById('c-donut').getContext('2d');
   CHARTS.donut=new Chart(c,{type:'doughnut',data:{labels:DRUGS,datasets:[{data:[48,22,16,9,5],backgroundColor:DRUG_COLORS,borderWidth:2,borderColor:'#111E32'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{...dp().tooltip,callbacks:{label:c=>' '+c.label+': '+c.raw+'%'}}}}});
 }
-// ... (chart builders identical to your template - trimmed here for brevity) ...
+function buildOutcomes(){
+  const c=document.getElementById('c-outcomes').getContext('2d');
+  CHARTS.outcomes=new Chart(c,{type:'bar',data:{labels:['Hospitalized','ER Visit','Recovered','Ongoing','Death/LT','Unknown'],datasets:[{data:[31.2,18.4,28.1,14.8,5.2,2.3],backgroundColor:['#FF5E6C','#FFD166','#00D4AA','#4FA3E0','#A78BFA','#7094B8'],borderRadius:4,borderSkipped:false}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{...dg().x,ticks:{...dg().x.ticks,callback:v=>v+'%'}},y:{...dg().y}},plugins:{legend:{display:false},tooltip:{...dp().tooltip,callbacks:{label:c=>' '+c.raw+'%'}}}}});
+}
+function buildAge(){
+  const c=document.getElementById('c-age').getContext('2d');
+  CHARTS.age=new Chart(c,{type:'bar',data:{labels:['18-24','25-34','35-44','45-54','55-64','65-74','75+'],datasets:[{label:'GLP-1 Cohort',data:[2.1,5.8,12.4,22.6,31.8,20.1,5.2],backgroundColor:'rgba(0,212,170,0.55)',borderColor:'#00D4AA',borderWidth:1,borderRadius:2},{label:'Control Cohort',data:[1.4,4.2,9.8,19.4,29.6,26.8,8.8],backgroundColor:'rgba(255,94,108,0.4)',borderColor:'#FF5E6C',borderWidth:1,borderRadius:2}]},options:{responsive:true,maintainAspectRatio:false,scales:dg(),plugins:dp()}});
+}
+function buildSex(){
+  const c=document.getElementById('c-sex').getContext('2d');
+  CHARTS.sex=new Chart(c,{type:'bar',data:{labels:['Female','Male'],datasets:[{label:'% of Reports',data:[68,32],backgroundColor:['rgba(0,212,170,0.5)','rgba(79,163,224,0.5)'],borderColor:['#00D4AA','#4FA3E0'],borderWidth:1,borderRadius:4,yAxisID:'y'},{label:'GI Severe Rate %',data:[15.8,11.2],backgroundColor:['rgba(255,94,108,0.7)','rgba(255,209,102,0.7)'],borderColor:['#FF5E6C','#FFD166'],borderWidth:1,borderRadius:4,yAxisID:'y2'}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{...dg().y,title:{display:true,text:'% Reports',color:'#7094B8',font:{size:10}}},y2:{...dg().y,position:'right',title:{display:true,text:'GI Rate %',color:'#7094B8',font:{size:10}}}},plugins:dp()}});
+}
+function buildQuarterly(){
+  const c=document.getElementById('c-quarterly').getContext('2d');
+  CHARTS.quarterly=new Chart(c,{type:'bar',data:{labels:QUARTERS,datasets:[{label:'Total Reports',type:'bar',data:QTR_TOTAL,backgroundColor:'rgba(79,163,224,0.4)',borderColor:'#4FA3E0',borderWidth:1,borderRadius:3,yAxisID:'y'},{label:'GI Severe Events',type:'bar',data:QTR_GI,backgroundColor:'rgba(255,94,108,0.6)',borderColor:'#FF5E6C',borderWidth:1,borderRadius:3,yAxisID:'y'},{label:'GI Rate %',type:'line',data:QTR_RATE,borderColor:'#FFD166',borderWidth:2.5,pointBackgroundColor:'#FFD166',pointRadius:4,tension:0.3,yAxisID:'y2'}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{...dg().y},y2:{...dg().y,position:'right',ticks:{...dg().y.ticks,callback:v=>v+'%'}}},plugins:dp()}});
+}
+function buildStacked(){
+  const c=document.getElementById('c-stacked').getContext('2d');
+  CHARTS.stacked=new Chart(c,{type:'line',data:{labels:QUARTERS,datasets:[{label:'Semaglutide',data:[820,1020,1200,1410,1560,1680,1820,1960,2050,2140,2200,2260,2340],backgroundColor:'rgba(0,212,170,0.3)',borderColor:'#00D4AA',borderWidth:2,fill:true,tension:0.4},{label:'Tirzepatide',data:[0,80,160,290,420,560,680,760,820,880,910,940,980],backgroundColor:'rgba(255,209,102,0.3)',borderColor:'#FFD166',borderWidth:2,fill:true,tension:0.4},{label:'Liraglutide',data:[540,580,610,640,650,660,660,650,640,620,610,600,590],backgroundColor:'rgba(255,94,108,0.25)',borderColor:'#FF5E6C',borderWidth:1.5,fill:true,tension:0.4},{label:'Dulaglutide',data:[280,300,310,330,340,350,360,370,380,390,390,400,410],backgroundColor:'rgba(167,139,250,0.2)',borderColor:'#A78BFA',borderWidth:1.5,fill:true,tension:0.4},{label:'Exenatide',data:[180,200,210,220,220,230,230,240,240,250,250,260,260],backgroundColor:'rgba(79,163,224,0.15)',borderColor:'#4FA3E0',borderWidth:1.5,fill:true,tension:0.4}]},options:{responsive:true,maintainAspectRatio:false,scales:dg(),plugins:dp()}});
+}
+function buildHospTrend(){
+  const c=document.getElementById('c-hosp-trend').getContext('2d');
+  CHARTS.hospTrend=new Chart(c,{type:'line',data:{labels:QUARTERS,datasets:[{label:'Hospitalization Rate %',data:[35.1,34.2,33.8,33.1,32.6,32.0,31.8,31.2,30.9,30.4,29.8,29.1,28.4],borderColor:'#FF5E6C',borderWidth:2.5,backgroundColor:'rgba(255,94,108,0.1)',fill:true,tension:0.4,pointBackgroundColor:'#FF5E6C',pointRadius:3},{label:'GI Severe Rate %',data:[11.9,12.8,13.0,13.3,13.5,13.9,14.0,14.5,14.6,14.7,15.0,15.1,15.0],borderColor:'#FFD166',borderWidth:2,backgroundColor:'rgba(255,209,102,0.08)',fill:true,tension:0.4,pointBackgroundColor:'#FFD166',pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{...dg().y,ticks:{...dg().y.ticks,callback:v=>v+'%'}},x:dg().x},plugins:dp()}});
+}
+function buildPRR(){
+  const c=document.getElementById('c-prr').getContext('2d');
+  CHARTS.prr=new Chart(c,{type:'bar',data:{labels:DRUGS,datasets:[{label:'PRR',data:PRR_VALS,backgroundColor:PRR_VALS.map(v=>v>2?'rgba(255,94,108,0.65)':'rgba(112,148,184,0.45)'),borderColor:PRR_VALS.map(v=>v>2?'#FF5E6C':'#7094B8'),borderWidth:1,borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{...dg().x,min:0,max:4},y:{...dg().y}},plugins:{legend:{display:false},tooltip:dp().tooltip}}});
+}
+function buildGITypes(){
+  const c=document.getElementById('c-gitypes').getContext('2d');
+  CHARTS.gitypes=new Chart(c,{type:'bar',data:{labels:DRUGS,datasets:[{label:'Nausea/Vomiting',data:[8.2,7.1,6.8,4.2,3.9],backgroundColor:'rgba(0,212,170,0.6)',borderRadius:3},{label:'Gastroparesis',data:[2.8,2.1,1.6,0.9,0.8],backgroundColor:'rgba(255,94,108,0.6)',borderRadius:3},{label:'Bowel Obstruction',data:[1.4,1.2,0.8,0.4,0.3],backgroundColor:'rgba(255,209,102,0.6)',borderRadius:3},{label:'Pancreatitis',data:[0.9,0.8,0.6,0.3,0.2],backgroundColor:'rgba(167,139,250,0.6)',borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,scales:dg(),plugins:dp()}});
+}
+function buildWeight(){
+  const c=document.getElementById('c-weight').getContext('2d');
+  CHARTS.weight=new Chart(c,{type:'bar',data:{labels:['<70','70-79','80-89','90-99','100-109','110-119','120+'],datasets:[{label:'GI Severe',data:[2.1,6.8,14.2,22.4,24.8,18.6,11.1],backgroundColor:'rgba(255,94,108,0.65)',borderColor:'#FF5E6C',borderWidth:1,borderRadius:3},{label:'No GI Event',data:[5.2,12.4,20.8,24.1,19.8,11.6,6.1],backgroundColor:'rgba(0,212,170,0.45)',borderColor:'#00D4AA',borderWidth:1,borderRadius:3}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{...dg().x,title:{display:true,text:'Weight (kg)',color:'#7094B8',font:{size:10}}},y:{...dg().y,title:{display:true,text:'% of Reports',color:'#7094B8',font:{size:10}}}},plugins:dp()}});
+}
+function buildPoly(){
+  const c=document.getElementById('c-poly').getContext('2d');
+  CHARTS.poly=new Chart(c,{type:'line',data:{labels:['1','2','3','4','5','6','7','8','9','10+'],datasets:[{label:'GI Severe',data:[3.2,5.8,9.4,14.2,18.6,21.8,12.4,8.2,4.1,2.3],borderColor:'#FF5E6C',backgroundColor:'rgba(255,94,108,0.15)',fill:true,tension:0.4,pointRadius:4,borderWidth:2},{label:'No GI Event',data:[8.4,14.2,18.8,20.1,16.4,10.8,5.8,3.2,1.6,0.7],borderColor:'#00D4AA',backgroundColor:'rgba(0,212,170,0.1)',fill:true,tension:0.4,pointRadius:4,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{...dg().x,title:{display:true,text:'Concurrent Medications',color:'#7094B8',font:{size:10}}},y:{...dg().y,title:{display:true,text:'% of Reports',color:'#7094B8',font:{size:10}}}},plugins:dp()}});
+}
+function buildForest(){
+  const c=document.getElementById('c-forest').getContext('2d');
+  const pts=[{x:3.20,y:0,lo:2.91,hi:3.52},{x:2.80,y:1,lo:2.41,hi:3.25},{x:2.10,y:2,lo:1.78,hi:2.48},{x:1.60,y:3,lo:1.28,hi:1.99},{x:1.40,y:4,lo:1.08,hi:1.82}];
+  CHARTS.forest=new Chart(c,{type:'scatter',data:{datasets:[{label:'GLP-1 Drugs',data:pts.map(p=>({x:p.x,y:p.y})),backgroundColor:pts.map(p=>p.x>2?'rgba(255,94,108,0.8)':'rgba(112,148,184,0.8)'),pointStyle:'rectRot',pointRadius:12,borderColor:pts.map(p=>p.x>2?'#FF5E6C':'#7094B8'),borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{...dg().x,min:0.5,max:4.5,title:{display:true,text:'PRR value',color:'#7094B8',font:{size:10}}},y:{...dg().y,min:-0.5,max:4.5,ticks:{...dg().y.ticks,callback:v=>{const d=DRUGS[Math.round(v)];return d||''},stepSize:1}}},plugins:{legend:{display:false},tooltip:{...dp().tooltip,callbacks:{label:c=>{const p=pts[c.dataIndex];return p?DRUGS[c.dataIndex]+': PRR='+p.x+' ('+p.lo+'-'+p.hi+')':''}}}}}});
+}
+function buildApriori(){
+  const rules=[{x:0.12,y:0.71,r:18,label:'Semaglutide+Ondansetron->Hosp'},{x:0.08,y:0.68,r:22,label:'GLP-1+Opioid->GI Severe'},{x:0.15,y:0.62,r:16,label:'Polypharmacy>=8->Serious'},{x:0.06,y:0.81,r:20,label:'Sema+Metoclopramide->Hosp'},{x:0.18,y:0.55,r:12,label:'Age>65+GLP1->GI'},{x:0.22,y:0.48,r:10,label:'Female+Semaglutide->GI'},{x:0.04,y:0.74,r:15,label:'GLP1+NSAID->GI Severe'},{x:0.09,y:0.60,r:11,label:'Weight>120kg->Hosp'},{x:0.28,y:0.40,r:8,label:'Any GLP1->Nausea'},{x:0.14,y:0.52,r:9,label:'Tirzepatide+Opioid->GI'}];
+  const c=document.getElementById('c-apriori').getContext('2d');
+  CHARTS.apriori=new Chart(c,{type:'bubble',data:{datasets:[{label:'Rules',data:rules.map(r=>({x:r.x,y:r.y,r:r.r/3,label:r.label})),backgroundColor:rules.map(r=>r.r>14?'rgba(255,94,108,0.6)':r.r>10?'rgba(255,209,102,0.6)':'rgba(0,212,170,0.6)'),borderColor:rules.map(r=>r.r>14?'#FF5E6C':r.r>10?'#FFD166':'#00D4AA'),borderWidth:1}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{...dg().x,min:0,max:0.35,title:{display:true,text:'Support',color:'#7094B8',font:{size:10}}},y:{...dg().y,min:0.3,max:0.95,title:{display:true,text:'Confidence',color:'#7094B8',font:{size:10}}}},plugins:{legend:{display:false},tooltip:{...dp().tooltip,callbacks:{label:c=>c.raw.label+' | Lift~'+(c.raw.r*0.2+1.5).toFixed(1)}}}}});
+}
+function buildRules(){
+  const c=document.getElementById('c-rules').getContext('2d');
+  CHARTS.rules=new Chart(c,{type:'bar',data:{labels:['GLP-1+Opioid->GI','Sema+Ondansetron->Hosp','Polypharmacy>=8->Serious','GLP-1+NSAID->GI','Sema+Metoclopramide->Hosp'],datasets:[{label:'Lift Score',data:[3.12,2.83,2.41,2.28,2.14],backgroundColor:['rgba(255,94,108,0.7)','rgba(255,94,108,0.6)','rgba(255,209,102,0.6)','rgba(255,209,102,0.5)','rgba(0,212,170,0.5)'],borderRadius:4}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:{x:{...dg().x,min:1},y:{...dg().y,ticks:{...dg().y.ticks,font:{size:10}}}},plugins:{legend:{display:false},tooltip:dp().tooltip}}});
+}
+function buildCluster(){
+  const c=document.getElementById('c-cluster').getContext('2d');
+  function gen(cx,cy,n,s){return Array.from({length:n},()=>({x:cx+(Math.random()-0.5)*s,y:cy+(Math.random()-0.5)*s,r:3}));}
+  CHARTS.cluster=new Chart(c,{type:'scatter',data:{datasets:[{label:'Cluster 1 - High-Risk Vulnerable',data:gen(2.2,2.0,300,1.2),backgroundColor:'rgba(255,94,108,0.45)',pointRadius:3},{label:'Cluster 2 - Moderate-Risk Active',data:gen(-0.5,0.2,500,1.8),backgroundColor:'rgba(255,209,102,0.4)',pointRadius:3},{label:'Cluster 3 - Lower-Risk Stable',data:gen(-1.8,-1.8,400,1.4),backgroundColor:'rgba(0,212,170,0.4)',pointRadius:3}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{...dg().x,title:{display:true,text:'PC1',color:'#7094B8',font:{size:10}}},y:{...dg().y,title:{display:true,text:'PC2',color:'#7094B8',font:{size:10}}}},plugins:dp()}});
+}
+function buildClusterBars(){
+  const c=document.getElementById('c-cluster-bars').getContext('2d');
+  CHARTS.clusterBars=new Chart(c,{type:'bar',data:{labels:['Cluster 1 High-Risk','Cluster 2 Moderate','Cluster 3 Low-Risk'],datasets:[{label:'GI Severe Rate %',data:[28.4,14.1,6.3],backgroundColor:'rgba(255,94,108,0.65)',borderRadius:4},{label:'Hospitalization Rate %',data:[41.2,22.8,11.4],backgroundColor:'rgba(255,209,102,0.65)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,scales:dg(),plugins:dp()}});
+}
+function buildROC(){
+  const c=document.getElementById('c-roc').getContext('2d');
+  const fpr=Array.from({length:50},(_,i)=>+(i/49).toFixed(3));
+  CHARTS.roc=new Chart(c,{type:'line',data:{labels:fpr,datasets:[{label:'Random Forest (AUC=0.843)',data:fpr.map(x=>Math.min(1,Math.pow(x,0.20))),borderColor:'#00D4AA',borderWidth:2.5,tension:0.3,pointRadius:0,backgroundColor:'rgba(0,212,170,0.07)',fill:'origin'},{label:'Logistic Regression (AUC=0.720)',data:fpr.map(x=>Math.min(1,Math.pow(x,0.45))),borderColor:'#FF5E6C',borderWidth:2,tension:0.3,pointRadius:0,borderDash:[6,3]},{label:'Random Baseline',data:fpr,borderColor:'rgba(112,148,184,0.4)',borderWidth:1,pointRadius:0,borderDash:[4,4]}]},options:{responsive:true,maintainAspectRatio:false,scales:{x:{...dg().x,title:{display:true,text:'False Positive Rate',color:'#7094B8',font:{size:10}}},y:{...dg().y,title:{display:true,text:'True Positive Rate',color:'#7094B8',font:{size:10}}}},plugins:dp()}});
+}
+function buildFI(){
+  const c=document.getElementById('c-fi').getContext('2d');
+  const feats=['Age x Weight','Log(Polypharmacy)','Time-to-Onset','GLP-1 Drug Type','GI Severe Flag','US Reporter','Sex (Female=1)','Concurrent Opioid','Polypharmacy Count','Weight (kg)','Age (years)'];
+  const vals=[0.02,0.04,0.05,0.06,0.07,0.08,0.09,0.12,0.14,0.15,0.18];
+  CHARTS.fi=new Chart(c,{type:'bar',data:{labels:feats,datasets:[{label:'Importance (Gini)',data:vals,backgroundColor:vals.map(v=>v>0.10?'rgba(255,94,108,0.65)':v>0.06?'rgba(255,209,102,0.6)':'rgba(0,212,170,0.5)'),borderRadius:3}]},options:{indexAxis:'y',responsive:true,maintainAspectRatio:false,scales:dg(),plugins:{legend:{display:false},tooltip:dp().tooltip}}});
+}
+function buildMetrics(){
+  const c=document.getElementById('c-metrics').getContext('2d');
+  CHARTS.metrics=new Chart(c,{type:'bar',data:{labels:['Accuracy','Precision','Recall','F1-Score','AUC'],datasets:[{label:'Logistic Regression',data:[0.71,0.68,0.61,0.64,0.72],backgroundColor:'rgba(255,94,108,0.55)',borderRadius:4},{label:'Random Forest',data:[0.79,0.76,0.79,0.77,0.84],backgroundColor:'rgba(0,212,170,0.55)',borderRadius:4}]},options:{responsive:true,maintainAspectRatio:false,scales:{y:{...dg().y,min:0,max:1},x:dg().x},plugins:dp()}});
+}
+function buildGauge(){
+  const c=document.getElementById('c-gauge').getContext('2d');
+  gaugeChart=new Chart(c,{type:'doughnut',data:{datasets:[{data:[0.3,0.7],backgroundColor:['rgba(0,212,170,0.8)','rgba(30,40,60,0.3)'],borderWidth:0,cutout:'75%',rotation:-90,circumference:180}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},tooltip:{enabled:false}}}});
+}
+function updateGauge(p){
+  if(!gaugeChart)return;
+  const col=p>0.6?'rgba(255,94,108,0.9)':p>0.35?'rgba(255,209,102,0.9)':'rgba(0,212,170,0.9)';
+  gaugeChart.data.datasets[0].data=[p,1-p];
+  gaugeChart.data.datasets[0].backgroundColor=[col,'rgba(30,40,60,0.3)'];
+  gaugeChart.update('none');
+}
 function initCharts(){
-  // call the builders from the template
   buildDonut();buildOutcomes();buildAge();buildSex();
   buildQuarterly();buildStacked();buildHospTrend();
   buildPRR();buildGITypes();
