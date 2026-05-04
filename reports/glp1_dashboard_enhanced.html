@@ -163,12 +163,12 @@ body{background:var(--bg);color:var(--white);font-family:'Segoe UI',system-ui,sa
     <p>FDA FAERS pharmacovigilance surveillance &mdash; GLP-1 receptor agonists vs metformin/control cohort</p>
   </div>
   <div class="kpi-grid">
-    <div class="kpi teal"><div class="kpi-icon">&#128202;</div><div class="kpi-val" id="kpi-total">42,380</div><div class="kpi-label">Total GLP-1 Reports</div><div class="kpi-sub">+18% vs prior year</div></div>
-    <div class="kpi coral"><div class="kpi-icon">&#127973;</div><div class="kpi-val" id="kpi-gi">5,918</div><div class="kpi-label">Severe GI Events</div><div class="kpi-sub">Nausea, Gastroparesis</div></div>
-    <div class="kpi yellow"><div class="kpi-icon">&#128200;</div><div class="kpi-val" id="kpi-rate">14.0%</div><div class="kpi-label">GI Event Rate</div><div class="kpi-sub">vs 4.8% in control</div></div>
-    <div class="kpi coral"><div class="kpi-icon">&#9888;</div><div class="kpi-val" id="kpi-hosp">31.2%</div><div class="kpi-label">Hospitalization Rate</div><div class="kpi-sub">Among GI severe cases</div></div>
-    <div class="kpi teal"><div class="kpi-icon">&#128300;</div><div class="kpi-val" id="kpi-prr">2.94</div><div class="kpi-label">Overall PRR</div><div class="kpi-sub">95% CI: 2.61&ndash;3.31</div></div>
-    <div class="kpi blue"><div class="kpi-icon">&#128138;</div><div class="kpi-val" id="kpi-ctrl">21,190</div><div class="kpi-label">Control Reports</div><div class="kpi-sub">Metformin comparator</div></div>
+    <div class="kpi teal"><div class="kpi-icon">&#128202;</div><div class="kpi-val" id="kpi-total">206,974</div><div class="kpi-label">Total GLP-1 Reports</div><div class="kpi-sub">+18% vs prior year</div></div>
+    <div class="kpi coral"><div class="kpi-icon">&#127973;</div><div class="kpi-val" id="kpi-gi">4,651</div><div class="kpi-label">Severe GI Events</div><div class="kpi-sub">Nausea, Gastroparesis</div></div>
+    <div class="kpi yellow"><div class="kpi-icon">&#128200;</div><div class="kpi-val" id="kpi-rate">2.2%</div><div class="kpi-label">GI Event Rate</div><div class="kpi-sub">vs 4.8% in control</div></div>
+    <div class="kpi coral"><div class="kpi-icon">&#9888;</div><div class="kpi-val" id="kpi-hosp">11.2%</div><div class="kpi-label">Hospitalization Rate</div><div class="kpi-sub">Among GI severe cases</div></div>
+    <div class="kpi teal"><div class="kpi-icon">&#128300;</div><div class="kpi-val" id="kpi-prr">1.36</div><div class="kpi-label">Overall PRR</div><div class="kpi-sub">95% CI: 1.30–1.43</div></div>
+    <div class="kpi blue"><div class="kpi-icon">&#128138;</div><div class="kpi-val" id="kpi-ctrl">160,909</div><div class="kpi-label">Control Reports</div><div class="kpi-sub">Metformin comparator</div></div>
   </div>
   <div class="grid-2">
     <div class="chart-card">
@@ -179,11 +179,11 @@ body{background:var(--bg);color:var(--white);font-family:'Segoe UI',system-ui,sa
           <canvas id="c-donut" role="img" aria-label="Donut chart of GI events by drug. Semaglutide 48%, Tirzepatide 22%, Liraglutide 16%, Dulaglutide 9%, Exenatide 5%.">Semaglutide 48%, Tirzepatide 22%, Liraglutide 16%, Dulaglutide 9%, Exenatide 5%</canvas>
         </div>
         <div class="donut-legend">
-          <div class="legend-item"><div class="legend-dot" style="background:#00D4AA"></div>Semaglutide<span class="legend-val" style="color:#00D4AA">48%</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:#FFD166"></div>Tirzepatide<span class="legend-val" style="color:#FFD166">22%</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:#FF5E6C"></div>Liraglutide<span class="legend-val" style="color:#FF5E6C">16%</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:#A78BFA"></div>Dulaglutide<span class="legend-val" style="color:#A78BFA">9%</span></div>
-          <div class="legend-item"><div class="legend-dot" style="background:#4FA3E0"></div>Exenatide<span class="legend-val" style="color:#4FA3E0">5%</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#00D4AA"></div>Semaglutide<span class="legend-val" style="color:#00D4AA">46%</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#FFD166"></div>Tirzepatide<span class="legend-val" style="color:#FFD166">40%</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#FF5E6C"></div>Liraglutide<span class="legend-val" style="color:#FF5E6C">4%</span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#A78BFA"></div>Dulaglutide<span class="legend-val" style="color:#A78BFA">910%/span></div>
+          <div class="legend-item"><div class="legend-dot" style="background:#4FA3E0"></div>Exenatide<span class="legend-val" style="color:#4FA3E0">0%</span></div>
         </div>
       </div>
     </div>
@@ -281,12 +281,12 @@ body{background:var(--bg);color:var(--white);font-family:'Segoe UI',system-ui,sa
           </tr>
         </thead>
         <tbody id="drug-tbody">
-          <tr><td><span style="color:var(--teal);font-weight:700">Semaglutide</span></td><td>20,342</td><td>2,841</td><td>14.0%</td><td><span style="color:var(--coral)">3.20</span><span class="prr-bar-bg"><span class="prr-bar-fill" style="background:var(--coral);width:80%"></span></span></td><td>32.1%</td><td>59y</td><td><span class="badge badge-coral" style="font-size:10px">&#9650; Signal</span></td></tr>
-          <tr><td><span style="color:var(--yellow);font-weight:700">Tirzepatide</span></td><td>9,310</td><td>1,150</td><td>12.4%</td><td><span style="color:var(--yellow)">2.80</span><span class="prr-bar-bg"><span class="prr-bar-fill" style="background:var(--yellow);width:65%"></span></span></td><td>28.7%</td><td>56y</td><td><span class="badge badge-coral" style="font-size:10px">&#9650; Signal</span></td></tr>
-          <tr><td><span style="color:var(--coral);font-weight:700">Liraglutide</span></td><td>6,812</td><td>756</td><td>11.1%</td><td><span style="color:var(--yellow)">2.10</span><span class="prr-bar-bg"><span class="prr-bar-fill" style="background:var(--yellow);width:45%"></span></span></td><td>24.3%</td><td>61y</td><td><span class="badge badge-coral" style="font-size:10px">&#9650; Signal</span></td></tr>
-          <tr><td><span style="color:var(--purple);font-weight:700">Dulaglutide</span></td><td>3,812</td><td>303</td><td>7.9%</td><td><span style="color:var(--muted)">1.60</span><span class="prr-bar-bg"><span class="prr-bar-fill" style="background:var(--muted);width:28%"></span></span></td><td>19.8%</td><td>63y</td><td><span class="badge badge-muted" style="font-size:10px">&#9711; Monitor</span></td></tr>
-          <tr><td><span style="color:var(--blue);font-weight:700">Exenatide</span></td><td>2,104</td><td>168</td><td>8.0%</td><td><span style="color:var(--muted)">1.40</span><span class="prr-bar-bg"><span class="prr-bar-fill" style="background:var(--muted);width:20%"></span></span></td><td>17.2%</td><td>64y</td><td><span class="badge badge-muted" style="font-size:10px">&#9711; Monitor</span></td></tr>
-        </tbody>
+<tr><td><span style="color:var(--teal);font-weight:700">Semaglutide</span></td><td>61,976</td><td>2,621</td><td>4.2%</td><td><span style="color:#00D4AA">2.57</span><span class="prr-bar-bg"><span class="prr-bar-fill" style="background:#00D4AA;width:64%"></span></span></td><td>n/a</td><td>n/a</td><td><span class="badge badge-coral" style="font-size:10px">&#9650; Signal</span></td></tr>
+<tr><td><span style="color:var(--yellow);font-weight:700">Tirzepatide</span></td><td>136,324</td><td>2,269</td><td>1.7%</td><td><span style="color:#FFD166">1.01</span><span class="prr-bar-bg"><span class="prr-bar-fill" style="background:#FFD166;width:25%"></span></span></td><td>n/a</td><td>n/a</td><td><span class="badge badge-muted" style="font-size:10px">&#9711; Monitor</span></td></tr>
+<tr><td><span style="color:var(--coral);font-weight:700">Liraglutide</span></td><td>6,738</td><td>235</td><td>3.5%</td><td><span style="color:#FF5E6C">2.12</span><span class="prr-bar-bg"><span class="prr-bar-fill" style="background:#FF5E6C;width:53%"></span></span></td><td>n/a</td><td>n/a</td><td><span class="badge badge-coral" style="font-size:10px">&#9650; Signal</span></td></tr>
+<tr><td><span style="color:var(--purple);font-weight:700">Dulaglutide</span></td><td>23,579</td><td>560</td><td>2.4%</td><td><span style="color:#A78BFA">1.44</span><span class="prr-bar-bg"><span class="prr-bar-fill" style="background:#A78BFA;width:36%"></span></span></td><td>n/a</td><td>n/a</td><td><span class="badge badge-muted" style="font-size:10px">&#9711; Monitor</span></td></tr>
+<tr><td><span style="color:var(--blue);font-weight:700">Exenatide</span></td><td>2,990</td><td>14</td><td>0.5%</td><td><span style="color:#4FA3E0">0.28</span><span class="prr-bar-bg"><span class="prr-bar-fill" style="background:#4FA3E0;width:7%"></span></span></td><td>n/a</td><td>n/a</td><td><span class="badge badge-muted" style="font-size:10px">&#9711; Monitor</span></td></tr>
+</tbody>
       </table>
     </div>
   </div>
@@ -451,7 +451,7 @@ const QTR_GI=[218,280,330,385,421,470,505,553,575,600,624,640,658];
 const QTR_RATE=QTR_GI.map((g,i)=>+(g/QTR_TOTAL[i]*100).toFixed(1));
 const DRUGS=['Semaglutide','Tirzepatide','Liraglutide','Dulaglutide','Exenatide'];
 const DRUG_COLORS=['#00D4AA','#FFD166','#FF5E6C','#A78BFA','#4FA3E0'];
-const PRR_VALS=[3.20,2.80,2.10,1.60,1.40];
+const PRR_VALS=[2.57,1.01,2.12,1.44,0.28];
 const CHARTS={};
 let gaugeChart=null;
 
@@ -460,7 +460,7 @@ function dp(){return{legend:{labels:{color:'#E8F2FF',boxWidth:12,boxHeight:12,pa
 
 function buildDonut(){
   const c=document.getElementById('c-donut').getContext('2d');
-  CHARTS.donut=new Chart(c,{type:'doughnut',data:{labels:DRUGS,datasets:[{data:[48,22,16,9,5],backgroundColor:DRUG_COLORS,borderWidth:2,borderColor:'#111E32'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{...dp().tooltip,callbacks:{label:c=>' '+c.label+': '+c.raw+'%'}}}}});
+  CHARTS.donut=new Chart(c,{type:'doughnut',data:{labels:DRUGS,datasets:[{data:[46,40,4,10,0],backgroundColor:DRUG_COLORS,borderWidth:2,borderColor:'#111E32'}]},options:{responsive:true,maintainAspectRatio:false,cutout:'68%',plugins:{legend:{display:false},tooltip:{...dp().tooltip,callbacks:{label:c=>' '+c.label+': '+c.raw+'%'}}}}});
 }
 function buildOutcomes(){
   const c=document.getElementById('c-outcomes').getContext('2d');
