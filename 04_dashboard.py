@@ -776,6 +776,241 @@ def generate_dashboard():
     kpi_html   = build_kpi_cards(fact, eda)
     calc_html  = build_risk_calculator_html(models, fact)
 
+    # Build lightweight slices for client-side filtering (by drug, country, quarter)
+    def build_light_slices(df: pd.DataFrame, clustered_df: pd.DataFrame | None):
+        overall = {}
+        qt = (
+            df[df['cohort'] == 'glp1']
+            .groupby('quarter')
+            .agg(total=('primaryid', 'count'), gi_severe=('gi_severe_flag', 'sum'))
+            .reset_index()
+        )
+        overall['quarterly'] = {
+            'quarter': qt['quarter'].tolist(),
+            'total': qt['total'].tolist(),
+            'gi_severe': qt['gi_severe'].tolist(),
+        }
+        overall['age_glp'] = (
+            df[(df['cohort'] == 'glp1') & df['age_yr'].notna()]['age_yr']
+            .dropna().round(1).astype(float).tolist()[:1000]
+        )
+        overall['weight_sample'] = (
+            df[df['cohort'] == 'glp1'][['wt_kg', 'gi_severe_flag']]
+            .dropna().to_dict(orient='records')[:500]
+        )
+
+        def compute_prr(sub_df, control_df):
+            a = int(sub_df['gi_severe_flag'].sum())
+            b = int(len(sub_df) - a)
+            c = int(control_df['gi_severe_flag'].sum())
+            d = int(len(control_df) - c)
+            if (a + b) == 0 or (c + d) == 0:
+                return None
+            try:
+                pr = (a / (a + b)) / (c / (c + d))
+                return round(float(pr), 3)
+            except Exception:
+                return None
+
+        control_df = df[df['cohort'] == 'control']
+
+        # Limit country list to top N to control HTML size
+        top_countries = list(df['reporter_country'].value_counts().head(20).index)
+        top_countries = [c for c in top_countries if pd.notna(c)]
+        overall['top_countries'] = top_countries
+
+        drugs = sorted(df['glp1_drug'].dropna().unique())
+        quarters = sorted(df['quarter'].fillna('Unknown').unique())
+
+        combos = {}
+        for drug in (['ALL'] + drugs):
+            for country in (['ALL'] + top_countries + ['Other']):
+                for quarter in (['ALL'] + quarters):
+                    mask = (df['cohort'] == 'glp1')
+                    if drug != 'ALL':
+                        mask &= (df['glp1_drug'] == drug)
+                    if country != 'ALL':
+                        if country == 'Other':
+                            mask &= ~df['reporter_country'].isin(top_countries)
+                        else:
+                            mask &= (df['reporter_country'] == country)
+                    if quarter != 'ALL':
+                        mask &= (df['quarter'] == quarter)
+                    sub = df[mask]
+                    key = f"{drug}||{country}||{quarter}"
+                    qt2 = sub.groupby('quarter').agg(total=('primaryid', 'count'), gi_severe=('gi_severe_flag', 'sum')).reset_index()
+
+                    a = int(sub['gi_severe_flag'].sum())
+                    b = int(len(sub) - a)
+                    c = int(control_df['gi_severe_flag'].sum())
+                    d = int(len(control_df) - c)
+                    ac, bc, cc, dc = (
+                        a if a > 0 else 0.5,
+                        b if b > 0 else 0.5,
+                        c if c > 0 else 0.5,
+                        d if d > 0 else 0.5,
+                    )
+                    prr_val = None
+                    prr_ci = None
+                    try:
+                        prr_val = round(float((ac / (ac + bc)) / (cc / (cc + dc))), 3)
+                        import math
+
+                        var_log = (1.0 / ac - 1.0 / (ac + bc)) + (1.0 / cc - 1.0 / (cc + dc))
+                        se = math.sqrt(max(var_log, 0))
+                        lo = math.exp(math.log(prr_val) - 1.96 * se)
+                        hi = math.exp(math.log(prr_val) + 1.96 * se)
+                        prr_ci = [round(float(lo), 3), round(float(hi), 3)]
+                    except Exception:
+                        prr_val = None
+                        prr_ci = None
+
+                    combos[key] = {
+                        'quarterly': {
+                            'quarter': qt2['quarter'].tolist(),
+                            'total': qt2['total'].tolist(),
+                            'gi_severe': qt2['gi_severe'].tolist(),
+                        },
+                        'age_glp': sub['age_yr'].dropna().round(1).tolist()[:200],
+                        'weight_sample': sub[['wt_kg', 'gi_severe_flag']].dropna().to_dict(orient='records')[:200],
+                        'prr': prr_val,
+                        'prr_ci': prr_ci,
+                        'n_events': a,
+                        'n_total': len(sub),
+                    }
+
+        cluster_points = []
+        if clustered_df is not None:
+            sample = clustered_df.sample(min(3000, len(clustered_df)), random_state=42)
+            for _, r in sample.iterrows():
+                cluster_points.append({
+                    'pca_x': float(r.get('pca_x') or 0),
+                    'pca_y': float(r.get('pca_y') or 0),
+                    'glp1_drug': r.get('glp1_drug'),
+                    'reporter_country': r.get('reporter_country'),
+                    'quarter': r.get('quarter'),
+                    'cluster_name': r.get('cluster_name'),
+                })
+
+        return {'combos': combos, 'cluster_points': cluster_points, 'overall': overall}
+
+    data_slices = build_light_slices(fact, clustered)
+    data_slices_json = json.dumps(data_slices)
+
+    # Build filter controls HTML (populate options from data)
+    drug_opts = '\n'.join([f"<option value=\"{d}\">{d}</option>" for d in sorted(fact['glp1_drug'].dropna().unique())])
+    country_opts = '\n'.join([f"<option value=\"{c}\">{c}</option>" for c in sorted(fact['reporter_country'].fillna('Other').unique())])
+    quarter_opts = '\n'.join([f"<option value=\"{q}\">{q}</option>" for q in sorted(fact['quarter'].fillna('Unknown').unique())])
+
+    filters_html = f"""
+      <div style="display:flex; gap:10px; margin-left:16px; align-items:center;">
+        <select id="filter-drug" style="background:var(--card); color:var(--white); border:1px solid rgba(255,255,255,0.04); padding:6px 10px; border-radius:8px;">
+          <option value="ALL">All Drugs</option>
+          {drug_opts}
+        </select>
+        <select id="filter-country" style="background:var(--card); color:var(--white); border:1px solid rgba(255,255,255,0.04); padding:6px 10px; border-radius:8px;">
+          <option value="ALL">All Countries</option>
+          {country_opts}
+        </select>
+        <select id="filter-quarter" style="background:var(--card); color:var(--white); border:1px solid rgba(255,255,255,0.04); padding:6px 10px; border-radius:8px;">
+          <option value="ALL">All Quarters</option>
+          {quarter_opts}
+        </select>
+        <button id="filter-reset" style="margin-left:8px; background:transparent; border:1px solid rgba(255,255,255,0.06); color:var(--white); padding:6px 10px; border-radius:8px; cursor:pointer;">Reset</button>
+      </div>
+    """
+
+    # Build the filters script without f-string brace conflicts by concatenating the JSON
+    filters_script = """
+<script>
+const DATA_SLICES = """ + data_slices_json + """;
+function applyDashboardFilters(){
+  const d = document.getElementById('filter-drug') && document.getElementById('filter-drug').value || 'ALL';
+  const c = document.getElementById('filter-country') && document.getElementById('filter-country').value || 'ALL';
+  const q = document.getElementById('filter-quarter') && document.getElementById('filter-quarter').value || 'ALL';
+  // Use combos mapping keyed by "drug||country||quarter"
+  var key = d + '||' + c + '||' + q;
+  var slice = (DATA_SLICES['combos'] && DATA_SLICES['combos'][key]) ? DATA_SLICES['combos'][key] : DATA_SLICES['overall'];
+
+  try{
+    var qt = slice['quarterly'] || {quarter:[], total:[], gi_severe:[]};
+    Plotly.restyle('chart-quarterly', {'x': [qt['quarter'], qt['quarter'], qt['quarter']], 'y': [qt['total'], qt['gi_severe'], []]});
+  }catch(e){}
+  try{
+    var ages = slice['age_glp'] || [];
+    Plotly.restyle('chart-age_dist', {'x': [ages, []]});
+  }catch(e){}
+  try{
+    var w = (slice['weight_sample']||[]).map(function(r){return r['wt_kg'];});
+    if(w && w.length) Plotly.restyle('chart-weight_box', {'y': [w]});
+  }catch(e){}
+    // Update PRR chart annotation/title if prr present (include CI and n)
+    try{
+      var prr = slice['prr'];
+      var ci = slice['prr_ci'] || [];
+      var n = slice['n_total'] || 0;
+      if(prr){
+        var ann = 'PRR = ' + prr + (ci.length?(' (95% CI ' + ci[0] + '–' + ci[1] + ')') : '') + ', n=' + n;
+        Plotly.relayout('chart-prr', {'annotations[0].text': ann});
+      } else {
+        Plotly.relayout('chart-prr', {'annotations[0].text': 'PRR (slice) = -'});
+      }
+    }catch(e){}
+
+  // Update cluster scatter colors/points based on filters
+  try{
+    var pts = DATA_SLICES['cluster_points'] || [];
+    var topCountries = (DATA_SLICES['overall'] && DATA_SLICES['overall']['top_countries']) || [];
+    var filtered = pts.filter(function(p){
+      if(d !== 'ALL' && p['glp1_drug'] !== d) return false;
+      if(c !== 'ALL'){
+         if(c === 'Other'){
+            if(topCountries.includes(p['reporter_country'])) return false;
+         } else {
+            if(p['reporter_country'] !== c) return false;
+         }
+      }
+      if(q !== 'ALL' && p['quarter'] !== q) return false;
+      return true;
+    });
+    var groups = {};
+    filtered.forEach(function(p){
+      var cname = p['cluster_name'] || 'Cluster';
+      groups[cname] = groups[cname] || {x:[], y:[]};
+      groups[cname].x.push(p['pca_x']);
+      groups[cname].y.push(p['pca_y']);
+    });
+    var colors = ['#02C39A','#F9C74F','#F96167','#A78BFA','#60A5FA'];
+    var traces = [];
+    var idx = 0;
+    for(var cname in groups){
+      traces.push({
+        x: groups[cname].x,
+        y: groups[cname].y,
+        mode: 'markers',
+        type: 'scatter',
+        name: cname,
+        marker: {size:5, color: colors[idx % colors.length], opacity:0.65}
+      });
+      idx++;
+    }
+    if(traces.length === 0){
+      traces = [{x:[0], y:[0], mode:'markers', type:'scatter', marker:{opacity:0}}];
+    }
+    Plotly.react('chart-cluster', traces, {}, {responsive:true});
+  }catch(e){ console.warn('cluster update failed', e); }
+}
+document.addEventListener('DOMContentLoaded', function(){
+  var fd = document.getElementById('filter-drug'); if(fd) fd.addEventListener('change', applyDashboardFilters);
+  var fc = document.getElementById('filter-country'); if(fc) fc.addEventListener('change', applyDashboardFilters);
+  var fq = document.getElementById('filter-quarter'); if(fq) fq.addEventListener('change', applyDashboardFilters);
+  var fr = document.getElementById('filter-reset'); if(fr) fr.addEventListener('click', function(){ document.getElementById('filter-drug').value='ALL'; document.getElementById('filter-country').value='ALL'; document.getElementById('filter-quarter').value='ALL'; applyDashboardFilters(); });
+  // run once to sync
+  applyDashboardFilters();
+});
+</script>
+"""
+
     # ── Compose full HTML ────────────────────────────────────────────────────
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -849,6 +1084,8 @@ def generate_dashboard():
       FDA FAERS 2023Q1 – 2026Q1 · 13 Quarters · Star-Schema Data Warehouse
     </div>
   </div>
+  <!-- Filters injected here -->
+  {filters_html}
   <div class="header-meta">
     <span class="badge" style="background:{TEAL};color:{DARK_BG};">CMPE 255</span>&nbsp;
     <span class="badge" style="background:{CORAL};color:white;">Graduate Research</span>
