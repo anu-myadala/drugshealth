@@ -31,7 +31,31 @@ log = logging.getLogger(__name__)
 PROJECT_ROOT = Path(__file__).resolve().parent
 DATA_DIR     = PROJECT_ROOT / "data" / "processed"
 DATA_DIR.mkdir(parents=True, exist_ok=True)
-FAERS_DIR    = Path("/mnt/user-data/uploads")   # adjust if running locally
+# By default the pipeline expects FAERS zip files in FAERS_DIR. For local runs
+# you can set either the FAERS_DIR env var (a folder) or FAERS_ZIP_LIST env var
+# containing a list of absolute zip paths separated by os.pathsep (":" on mac/linux).
+FAERS_DIR = Path(os.environ.get("FAERS_DIR", "/mnt/user-data/uploads"))
+
+
+def _parse_env_zip_list() -> list[Path] | None:
+    """Parse FAERS_ZIP_LIST environment variable into Path list.
+    Supports os.pathsep (':' on mac/linux) or ';' separated lists.
+    """
+    raw = os.environ.get("FAERS_ZIP_LIST")
+    if not raw:
+        return None
+    # Support common separators
+    parts = []
+    if os.pathsep in raw:
+        parts = raw.split(os.pathsep)
+    elif ";" in raw:
+        parts = raw.split(";")
+    elif "," in raw:
+        parts = raw.split(",")
+    else:
+        parts = [raw]
+    paths = [Path(p).expanduser().resolve() for p in parts if p]
+    return paths
 
 # ── Drug filters ──────────────────────────────────────────────────────────────
 GLP1_DRUGS = ["SEMAGLUTIDE", "LIRAGLUTIDE", "DULAGLUTIDE", "TIRZEPATIDE", "EXENATIDE"]
@@ -68,9 +92,16 @@ SERIOUS_CODES = {"DE", "LT", "HO", "DS"}
 
 def list_quarter_zips() -> list[Path]:
     """Return all FAERS quarterly zip files sorted chronologically."""
+    # If FAERS_ZIP_LIST env var is provided, use that exact ordering.
+    env_list = _parse_env_zip_list()
+    if env_list:
+        found = [p for p in env_list if p.exists()]
+        log.info(f"Using FAERS_ZIP_LIST with {len(found)} files")
+        return found
+
     pattern = str(FAERS_DIR / "faers_ascii_*.zip")
     zips = sorted(glob.glob(pattern))
-    log.info(f"Found {len(zips)} quarterly zip files")
+    log.info(f"Found {len(zips)} quarterly zip files in FAERS_DIR={FAERS_DIR}")
     return [Path(z) for z in zips]
 
 
