@@ -297,8 +297,18 @@ def process_quarter(zip_path: Path) -> dict[str, pd.DataFrame]:
     fact = fact.merge(time_onset, on="primaryid", how="left")
     # Compute time_to_onset in days using real datetime difference when available
     fact["time_to_onset_days"] = (fact["event_date"] - fact["drug_start_date"]).dt.days
-    # If any remaining invalid or extreme values, set to NaN
-    fact.loc[(fact["time_to_onset_days"] < -3650) | (fact["time_to_onset_days"] > 3650), "time_to_onset_days"] = np.nan
+    # Apply configurable plausibility bounds for time-to-onset (in days).
+    # Defaults: TTO_MIN_DAYS=0 (ignore negative/onset-before-drug), TTO_MAX_DAYS=1825 (~5 years)
+    try:
+        TTO_MIN = int(os.environ.get("TTO_MIN_DAYS", "0"))
+    except Exception:
+        TTO_MIN = 0
+    try:
+        TTO_MAX = int(os.environ.get("TTO_MAX_DAYS", "1825"))
+    except Exception:
+        TTO_MAX = 1825
+    log.info(f"Applying time-to-onset plausibility filter: [{TTO_MIN}, {TTO_MAX}] days")
+    fact.loc[(fact["time_to_onset_days"] < TTO_MIN) | (fact["time_to_onset_days"] > TTO_MAX), "time_to_onset_days"] = np.nan
 
     # GI reaction term (primary term if multiple)
     gi_term_map = (reac[reac["is_gi_severe"]]

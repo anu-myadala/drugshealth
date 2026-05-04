@@ -32,20 +32,20 @@
     "h0": "GI event incidence is independent of GLP-1 vs Control drug use",
     "contingency_table": {
       "No GI Severe": {
-        "glp1": 16573,
-        "control": 7327
+        "control": 7327,
+        "glp1": 16573
       },
       "GI Severe": {
-        "glp1": 1847,
-        "control": 233
+        "control": 233,
+        "glp1": 1847
       }
     },
     "chi2_statistic": 350.0928,
-    "p_value": 4.0451486780541875e-78,
+    "p_value": 4.045148678054188e-78,
     "degrees_of_freedom": 1,
     "cramers_v": 0.1161,
-    "reject_h0": true,
-    "interpretation": "\u03c7\u00b2(1) = 350.09, p < 0.001. Strong evidence GLP-1 associated with GI events. Cram\u00e9r's V = 0.116."
+    "reject_h0": "True",
+    "interpretation": "\u03c7\u00b2(1) = 350.09, p < 0.001. Strong statistical evidence that GLP-1 use is associated with higher GI event incidence. Cram\u00e9r's V = 0.116 (moderate effect)."
   },
   "prr": {
     "test": "Proportional Reporting Ratio (PRR)",
@@ -66,10 +66,10 @@
       4.027
     ],
     "chi2": 350.093,
-    "p_value": 4.0451486780541875e-78,
+    "p_value": 4.045148678054188e-78,
     "signal_threshold": {
-      "prr_gt_2": true,
-      "chi2_gt_4": true,
+      "prr_ge_2": true,
+      "chi2_ge_4": "True",
       "n_ge_3": true
     },
     "who_umc_signal": true,
@@ -78,11 +78,6 @@
         "n": 8878,
         "gi_events": 1098,
         "prr": 4.013
-      },
-      "TIRZEPATIDE": {
-        "n": 4447,
-        "gi_events": 425,
-        "prr": 3.101
       },
       "LIRAGLUTIDE": {
         "n": 2534,
@@ -94,17 +89,22 @@
         "gi_events": 98,
         "prr": 1.917
       },
+      "TIRZEPATIDE": {
+        "n": 4447,
+        "gi_events": 425,
+        "prr": 3.101
+      },
       "EXENATIDE": {
         "n": 902,
         "gi_events": 35,
         "prr": 1.259
       }
     },
-    "interpretation": "PRR = 3.25 (95% CI 2.85\u20133.72). WHO-UMC signal detected."
+    "interpretation": "PRR = 3.25 (95% CI 2.85\u20133.72). ROR = 3.50 (95% CI 3.05\u20134.03). WHO-UMC regulatory signal detected (PRR\u22652, \u03c7\u00b2\u22654, n\u22653)."
   },
   "mann_whitney": {
-    "test": "Mann-Whitney U Test",
-    "h0": "Median weight equal in severe vs non-severe GI patients",
+    "test": "Mann-Whitney U Test (Weight: Severe GI vs Non-Severe GI, GLP-1 cohort)",
+    "h0": "Median weight is equal in severe vs non-severe GI event patients",
     "n_severe": 1847,
     "n_non_severe": 16573,
     "median_severe_kg": 100.5,
@@ -112,7 +112,7 @@
     "u_statistic": 15387692.5,
     "p_value": 0.7034189646835174,
     "effect_size_r": -0.0054,
-    "reject_h0": false,
-    "interpretation": "U=15387692, p<0.001. Severe median=100.5kg vs non-severe=101.1kg. r=-0.005."
+    "reject_h0": "False",
+    "interpretation": "U = 15387692, p = 0.7034. Median weight: severe = 100.5 kg vs non-severe = 101.1 kg. Effect size r = -0.005 (negligible). Not statistically significant difference."
   }
 }

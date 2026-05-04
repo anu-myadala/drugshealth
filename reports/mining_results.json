@@ -1,141 +1,101 @@
 {
   "clustering": {
-    "best_k": 3,
-    "silhouette": 0.341,
-    "davies_bouldin": 0.872,
-    "inertia": 124830.4,
+    "silhouette": 0.28559423519353366,
+    "davies_bouldin": 1.6144900907294382,
+    "best_k": 2,
     "cluster_names": {
       "0": "Low-Risk Stable",
-      "1": "Moderate-Risk Active",
-      "2": "High-Risk Vulnerable"
+      "1": "Moderate-Risk Active"
     },
-    "cluster_profiles": {
-      "0": {
-        "n": 4583,
-        "age_mean": 52.3,
-        "wt_mean": 93.9,
-        "poly_mean": 3.7,
-        "opioid_pct": 0.0,
-        "gi_pct": 6.9,
-        "sev_pct": 58.3
+    "profile": {
+      "n": {
+        "0": 14976,
+        "1": 3444
       },
-      "1": {
-        "n": 9765,
-        "age_mean": 64.0,
-        "wt_mean": 101.3,
-        "poly_mean": 4.8,
-        "opioid_pct": 10.1,
-        "gi_pct": 9.3,
-        "sev_pct": 58.0
+      "age_mean": {
+        "0": 61.896,
+        "1": 62.245
       },
-      "2": {
-        "n": 4072,
-        "age_mean": 68.0,
-        "wt_mean": 108.6,
-        "poly_mean": 6.2,
-        "opioid_pct": 60.5,
-        "gi_pct": 15.3,
-        "sev_pct": 61.0
+      "wt_mean": {
+        "0": 100.99,
+        "1": 101.34
+      },
+      "poly_mean": {
+        "0": 4.802,
+        "1": 4.844
+      },
+      "opioid_pct": {
+        "0": 0.0,
+        "1": 1.0
+      },
+      "gi_severe_pct": {
+        "0": 0.084,
+        "1": 0.17
+      },
+      "severity_pct": {
+        "0": 0.585,
+        "1": 0.6
+      },
+      "pct_female": {
+        "0": 0.582,
+        "1": 0.558
+      },
+      "tto_mean": {
+        "0": 64.883,
+        "1": 68.229
       }
     }
-  },
-  "apriori": {
-    "min_support": 0.02,
-    "min_confidence": 0.4,
-    "min_lift": 1.3,
-    "total_rules": 47,
-    "rules_above_lift_2": 12,
-    "top_rules": [
-      {
-        "antecedent": "{SEMAGLUTIDE, ONDANSETRON}",
-        "consequent": "{HOSPITALIZATION}",
-        "support": 0.042,
-        "confidence": 0.713,
-        "lift": 2.85
-      },
-      {
-        "antecedent": "{GLP-1, OPIOID}",
-        "consequent": "{GI SEVERE EVENT}",
-        "support": 0.061,
-        "confidence": 0.682,
-        "lift": 3.12
-      },
-      {
-        "antecedent": "{POLYPHARMACY\u22658}",
-        "consequent": "{SERIOUS OUTCOME}",
-        "support": 0.053,
-        "confidence": 0.741,
-        "lift": 2.44
-      },
-      {
-        "antecedent": "{TIRZEPATIDE, METOCLOPRAMIDE}",
-        "consequent": "{GASTROPARESIS}",
-        "support": 0.031,
-        "confidence": 0.658,
-        "lift": 2.31
-      },
-      {
-        "antecedent": "{LIRAGLUTIDE, PANTOPRAZOLE}",
-        "consequent": "{HOSPITALIZATION}",
-        "support": 0.038,
-        "confidence": 0.622,
-        "lift": 2.18
-      }
-    ]
   },
   "classification": {
     "logistic_regression": {
-      "auc": 0.7234,
-      "f1": 0.6512,
-      "recall": 0.6841,
-      "precision": 0.6218,
-      "accuracy": 0.7104,
-      "top_coefficients": {
-        "concurrent_opioid": 1.163,
-        "gi_severe_flag": 1.411,
-        "age_yr": 0.024,
-        "polypharmacy_count": 0.167,
-        "wt_kg": 0.011,
-        "sex_bin": -0.082
-      }
-    },
-    "random_forest": {
-      "auc": 0.8437,
-      "f1": 0.7731,
-      "recall": 0.7912,
-      "precision": 0.7558,
-      "accuracy": 0.8142,
-      "cv_auc_mean": 0.8381,
-      "cv_auc_std": 0.0183,
-      "feature_importances": {
-        "polypharmacy_count": 0.183,
-        "age_yr": 0.152,
-        "wt_kg": 0.141,
-        "concurrent_opioid": 0.124,
-        "sex_bin": 0.088,
-        "is_us": 0.079,
-        "gi_severe_flag": 0.074,
-        "glp1_drug_enc": 0.062,
-        "time_to_onset_days": 0.051,
-        "log_poly": 0.037,
-        "age_wt_interaction": 0.009
-      },
-      "best_params": {
-        "n_estimators": 200,
-        "max_depth": 12,
-        "min_samples_leaf": 8,
-        "class_weight": "balanced"
-      },
+      "auc": 0.533699168207024,
+      "f1": 0.2447714949651433,
+      "recall": 0.14602587800369685,
+      "precision": 0.7559808612440191,
       "confusion_matrix": [
         [
-          3241,
-          418
+          1418,
+          102
         ],
         [
-          312,
-          1187
+          1848,
+          316
         ]
       ]
-    }
+    },
+    "random_forest": {
+      "auc": 0.5475110054480008,
+      "f1": 0.4626334519572954,
+      "recall": 0.36044362292051757,
+      "precision": 0.6456953642384106,
+      "cv_auc_mean": 0.5466943755112673,
+      "cv_auc_std": 0.0037409342842943875,
+      "confusion_matrix": [
+        [
+          1092,
+          428
+        ],
+        [
+          1384,
+          780
+        ]
+      ]
+    },
+    "feature_columns": [
+      "age_yr",
+      "wt_kg",
+      "polypharmacy_count",
+      "concurrent_opioid",
+      "sex_bin",
+      "is_us",
+      "gi_severe_flag",
+      "glp1_drug_enc",
+      "time_to_onset_days",
+      "log_poly",
+      "age_wt_interaction"
+    ],
+    "n_train": 14736,
+    "n_test": 3684,
+    "class_balance": 0.5875135722041259
   }
 }
