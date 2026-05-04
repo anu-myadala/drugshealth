@@ -236,7 +236,7 @@ def fig_weight_boxplot(fact: pd.DataFrame) -> go.Figure:
             fig.add_trace(go.Box(
                 y=sub["wt_kg"], name=f"{cohort} / {gi}",
                 marker_color=color,
-                line=dict(dash=dash),
+                line=dict(width=2 if gi=="GI Severe" else 1),
                 boxmean="sd",
                 opacity=0.8 if gi=="GI Severe" else 0.5,
             ))
