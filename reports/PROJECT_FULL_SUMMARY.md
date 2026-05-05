@@ -100,7 +100,7 @@ Deliverables produced
 ---------------------
 - All processed CSVs and model artifacts under `data/processed/` and `models/`.
 - Reports: `reports/eda_results.json`, `reports/mining_results.json`, `reports/RESULTS_LATEST.md`, `reports/PROJECT_FULL_SUMMARY.md`.
-- Extended model outputs: `reports/extended_mining_results.json`, `reports/extended_model_comparison.csv`, `reports/figures/extended_model_comparison_table.png`, `reports/figures/extended_rf_feature_importances.png`, and other figures in `reports/figures/`.
+- Extended model outputs: `reports/extended_mining_results.json`, `reports/extended_model_comparison.csv`, `reports/figures/extended_model_comparison_table.png`, `reports/figures/extended_rf_feature_importances.png`, `reports/figures/star_schema.png`, `reports/figures/summary_visuals.png`, and other figures in `reports/figures/`.
 - Star schema DDL and loader: `schema/star_schema.sql`, `06_star_schema_loader.py`.
 
 How to reproduce the analysis

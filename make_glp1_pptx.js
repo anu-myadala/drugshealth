@@ -52,7 +52,7 @@ function addSlide(bg = C.navy) {
 }
 
 function slideNum(s, n) {
-  s.addText(`${n} / 21`, { x: W - 1.0, y: H - 0.32, w: 0.8, h: 0.22, fontSize: 8, color: C.mutedDark, align: "right" });
+  s.addText(`${n} / 24`, { x: W - 1.0, y: H - 0.32, w: 0.8, h: 0.22, fontSize: 8, color: C.mutedDark, align: "right" });
 }
 
 function accent(s, color = C.teal) {
@@ -66,6 +66,11 @@ function sectionTag(s, text, color = C.teal) {
 
 function title(s, text, x = 0.4, y = 0.68, w = 9.2, fontSize = 32, color = C.white) {
   s.addText(text, { x, y, w, h: 0.9, fontSize, bold: true, color, fontFace: "Calibri", align: "left" });
+}
+
+function titleBar(s, text) {
+  s.addShape(pres.shapes.RECTANGLE, { x: 0, y: 0, w: W, h: 0.55, fill: { color: C.navyMid }, line: { color: C.navyMid, width: 0 } });
+  s.addText(text, { x: 0.4, y: 0.08, w: 9.2, h: 0.4, fontSize: 20, bold: true, color: C.white, fontFace: "Calibri" });
 }
 
 function subtitle(s, text, x = 0.4, y = 1.45, w = 9.0, color = C.muted) {
@@ -1075,6 +1080,94 @@ async function slide21() {
   s.addNotes("SPEAKER NOTES — Slide 21 (Conclusion & Live Demo)\nDuration: ~90 seconds\n\nPoint to the Risk Simulator screenshot. 'And to bridge the gap between data and clinical practice, I've built a live interactive dashboard. You can input any patient's parameters — age, weight, polypharmacy count, GLP-1 drug — and the trained Random Forest model returns a real-time hospitalization risk prediction.' If presenting live: demo the HTML file.\n\nClose with: 'This study demonstrates that data mining on a voluntary reporting database can surface clinically meaningful pharmacovigilance signals — at scale, reproducibly, and within a single pipeline. Thank you.'");
 }
 
+// ─── SLIDE 22: STAR SCHEMA ─────────────────────────────────────────────────
+async function slide22() {
+  const s = pres.addSlide();
+  titleBar(s, "DATA WAREHOUSE DESIGN (STAR SCHEMA)");
+
+  const schemaPath = "/Users/anumyad/Desktop/drugshealth/reports/figures/star_schema.png";
+  if (fs.existsSync(schemaPath)) {
+    const img = "image/png;base64," + fs.readFileSync(schemaPath).toString("base64");
+    s.addImage({ data: img, x: 0.6, y: 1.3, w: 8.8, h: 4.6 });
+  } else {
+    s.addText("(Star schema diagram missing)", { x: 1.0, y: 2.6, w: 8.0, h: 1.0, fontSize: 16, color: C.muted, align: "center" });
+  }
+
+  s.addText("Fact table: adverse event case | Dimensions: patient, time, outcome, drug, reaction", {
+    x: 0.6,
+    y: 6.1,
+    w: 8.8,
+    h: 0.4,
+    fontSize: 11,
+    color: C.muted,
+    fontFace: "Calibri",
+    align: "center",
+  });
+
+  slideNum(s, 22);
+  s.addNotes(
+    "SPEAKER NOTES — Slide 22 (Star Schema)\nDuration: ~60–75 seconds\n\nThis slide documents the warehousing step required by the rubric. The center fact table captures one unique FAERS case, while the surrounding dimensions store normalized patient demographics, time attributes, outcomes, drugs, and reaction terms. This star design supports fast slice‑and‑dice analysis and provides a clean ETL boundary between raw FAERS tables and modeling-ready features. Emphasize that this structure enables reproducibility and consistent cohort definitions across EDA, mining, and reporting."
+  );
+}
+
+// ─── SLIDE 23: MODEL EVALUATION ───────────────────────────────────────────
+async function slide23() {
+  const s = pres.addSlide();
+  titleBar(s, "MODEL EVALUATION & PERFORMANCE");
+
+  const perfPath = "/Users/anumyad/Desktop/drugshealth/reports/figures/extended_model_comparison_table.png";
+  const cmPath = "/Users/anumyad/Desktop/drugshealth/reports/figures/classification_results.png";
+
+  if (fs.existsSync(perfPath)) {
+    const perfImg = "image/png;base64," + fs.readFileSync(perfPath).toString("base64");
+    s.addImage({ data: perfImg, x: 0.6, y: 1.3, w: 4.4, h: 4.6 });
+  } else {
+    s.addText("(Model comparison table missing)", { x: 0.6, y: 2.6, w: 4.4, h: 1.0, fontSize: 12, color: C.muted, align: "center" });
+  }
+
+  if (fs.existsSync(cmPath)) {
+    const cmImg = "image/png;base64," + fs.readFileSync(cmPath).toString("base64");
+    s.addImage({ data: cmImg, x: 5.2, y: 1.3, w: 4.3, h: 4.6 });
+  } else {
+    s.addText("(Confusion matrix missing)", { x: 5.2, y: 2.6, w: 4.3, h: 1.0, fontSize: 12, color: C.muted, align: "center" });
+  }
+
+  s.addText("Threshold‑tuned Random Forest prioritized sensitivity for rare severe events.", {
+    x: 0.6,
+    y: 6.1,
+    w: 8.8,
+    h: 0.4,
+    fontSize: 11,
+    color: C.muted,
+    fontFace: "Calibri",
+    align: "center",
+  });
+
+  slideNum(s, 23);
+  s.addNotes(
+    "SPEAKER NOTES — Slide 23 (Model Evaluation)\nDuration: ~90 seconds\n\nWalk the audience through the performance table on the left: Decision Tree, Naive Bayes, and Random Forest with accuracy, precision, recall, F1, and ROC‑AUC. Emphasize that recall is the primary surveillance metric because missing a severe GI event is the most costly error.\n\nOn the right, interpret the confusion matrix: the threshold‑tuned Random Forest aggressively flags potential severe cases to maximize sensitivity. Acknowledge the precision trade‑off and frame it as acceptable for pharmacovigilance triage workflows."
+  );
+}
+
+// ─── SLIDE 24: VISUAL SUMMARY ──────────────────────────────────────────────
+async function slide24() {
+  const s = pres.addSlide();
+  titleBar(s, "VISUAL SUMMARY — KEY FINDINGS");
+
+  const summaryPath = "/Users/anumyad/Desktop/drugshealth/reports/figures/summary_visuals.png";
+  if (fs.existsSync(summaryPath)) {
+    const summaryImg = "image/png;base64," + fs.readFileSync(summaryPath).toString("base64");
+    s.addImage({ data: summaryImg, x: 0.4, y: 1.1, w: 9.2, h: 5.6 });
+  } else {
+    s.addText("(Summary visual missing)", { x: 1.0, y: 2.6, w: 8.0, h: 1.0, fontSize: 16, color: C.muted, align: "center" });
+  }
+
+  slideNum(s, 24);
+  s.addNotes(
+    "SPEAKER NOTES — Slide 24 (Visual Summary)\nDuration: ~90 seconds\n\nUse this montage to recap the full analytic story: disproportionality signal (PRR forest), model performance, feature importance, PCA variance distribution, and the warehousing architecture. This slide ties together the rubric requirements by showing that the project covers data warehousing, preprocessing, visualization, data mining, and evaluation. End with a crisp summary: GLP‑1 agents show significant GI signal, a tuned Random Forest provides high‑sensitivity surveillance, and the pipeline is reproducible end‑to‑end."
+  );
+}
+
 // ─── MAIN ────────────────────────────────────────────────────────────────────
 (async () => {
   console.log("Building slides...");
@@ -1120,6 +1213,12 @@ async function slide21() {
   console.log("20 done");
   await slide21();
   console.log("21 done");
+  await slide22();
+  console.log("22 done");
+  await slide23();
+  console.log("23 done");
+  await slide24();
+  console.log("24 done");
 
   await pres.writeFile({ fileName: "/Users/anumyad/Desktop/drugshealth/reports/GLP1_FAERS_CMPE255.pptx" });
   console.log("Done! File written.");

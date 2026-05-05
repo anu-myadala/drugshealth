@@ -170,6 +170,10 @@ reports/figures/extended_model_comparison_table.png
 
 reports/figures/extended_rf_feature_importances.png
 
+reports/figures/star_schema.png
+
+reports/figures/summary_visuals.png
+
 reports/figures/*.png (All EDA & model figures)
 
 Figures and tables referenced in the results above are saved under reports/figures/.
