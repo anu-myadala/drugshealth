@@ -609,7 +609,7 @@ def run_extended_mining(fact: pd.DataFrame, save_prefix: str = "extended") -> di
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
     # Decision Tree
-    dt = DecisionTreeClassifier(max_depth=6, random_state=42)
+    dt = DecisionTreeClassifier(max_depth=6, random_state=42, class_weight="balanced")
     dt.fit(X_train, y_train)
     y_pred_dt = dt.predict(X_test)
     proba_dt = dt.predict_proba(X_test) if hasattr(dt, 'predict_proba') else None
@@ -665,7 +665,7 @@ def run_extended_mining(fact: pd.DataFrame, save_prefix: str = "extended") -> di
     # RandomForest baseline for comparison
     try:
         # Use smaller RF for comparison to limit memory/CPU
-        rf = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=1)
+        rf = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=1, class_weight="balanced")
         rf.fit(X_train, y_train)
         y_pred_rf = rf.predict(X_test)
         pa_rf = np.asarray(rf.predict_proba(X_test))

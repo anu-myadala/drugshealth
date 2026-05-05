@@ -26,11 +26,11 @@
   "dbscan_n_clusters": 50,
   "decision_tree": {
     "model": "DecisionTree",
-    "accuracy": 0.8951,
-    "precision": 0.5936675461741425,
-    "recall": 0.20089285714285715,
-    "f1": 0.3002001334222815,
-    "roc_auc": 0.7879815194658946
+    "accuracy": 0.8209,
+    "precision": 0.34315100514259,
+    "recall": 0.6553571428571429,
+    "f1": 0.4504449217551396,
+    "roc_auc": 0.790244329150579
   },
   "gaussian_nb": {
     "model": "GaussianNB",
@@ -42,10 +42,10 @@
   },
   "random_forest": {
     "model": "RandomForest",
-    "accuracy": 0.8897,
-    "precision": 0.5150976909413855,
-    "recall": 0.25892857142857145,
-    "f1": 0.34462269756387404,
-    "roc_auc": 0.7814301801801801
+    "accuracy": 0.8557,
+    "precision": 0.36371308016877635,
+    "recall": 0.3848214285714286,
+    "f1": 0.3739696312364425,
+    "roc_auc": 0.6972605473777348
   }
 }

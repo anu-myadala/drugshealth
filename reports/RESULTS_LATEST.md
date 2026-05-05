@@ -98,9 +98,9 @@ Extended modeling (feature reduction + alternative classifiers)
 -------------------------------------------------------------
 - PCA explained variance: PC1 = 96.84%, PC2 = 2.28% (cumulative = 99.12%)
 - DBSCAN clusters (PCA sample): 50
-- Decision Tree: Accuracy = 0.8951, Precision = 0.5937, Recall = 0.2009, F1 = 0.3002, ROC-AUC = 0.7880
+- Decision Tree (balanced): Accuracy = 0.8209, Precision = 0.3432, Recall = 0.6554, F1 = 0.4504, ROC-AUC = 0.7902
 - Gaussian Naive Bayes: Accuracy = 0.8662, Precision = 0.3910, Recall = 0.3491, F1 = 0.3689, ROC-AUC = 0.7742
-- Random Forest (comparison on sample): Accuracy = 0.8897, Precision = 0.5151, Recall = 0.2589, F1 = 0.3446, ROC-AUC = 0.7814
+- Random Forest (balanced, comparison on sample): Accuracy = 0.8557, Precision = 0.3637, Recall = 0.3848, F1 = 0.3740, ROC-AUC = 0.6973
 
 Artifacts generated
 -------------------
