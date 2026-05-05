@@ -87,11 +87,11 @@ Logistic Regression (interpretable):
 - Recall = 0.6307
 - Precision = 0.3234
 
-Random Forest (surveillance-focused):
+Random Forest (surveillance-focused, threshold=0.15):
 - AUC = 0.8438
-- F1 = 0.4298
-- Recall = 0.7334 (primary metric)
-- Precision = 0.3039
+- F1 = 0.2230
+- Recall = 0.9639 (primary metric)
+- Precision = 0.1272
 - CV AUC: skipped (runtime optimization)
 
 Extended modeling (feature reduction + alternative classifiers)

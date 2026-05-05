@@ -423,8 +423,10 @@ def run_classification(fact: pd.DataFrame) -> dict:
                                  random_state=42, n_jobs=-1, max_depth=12,
                                  min_samples_leaf=5)
     rf.fit(X_train, y_train)
-    rf_pred  = rf.predict(X_test)
     rf_proba = rf.predict_proba(X_test)[:, 1]
+    # Custom clinical threshold for rare severe events
+    custom_threshold = 0.15
+    rf_pred = (rf_proba >= custom_threshold).astype(int)
     rf_auc   = roc_auc_score(y_test, rf_proba)
     rf_f1    = f1_score(y_test, rf_pred)
     rf_rec   = recall_score(y_test, rf_pred)
@@ -433,7 +435,7 @@ def run_classification(fact: pd.DataFrame) -> dict:
     # 5-fold CV on training set only (prevents test-set leakage)
     # Skip cross-validation to keep runtime manageable on large datasets
     cv_rf = np.array([np.nan])
-    print(f"\n  Random Forest: AUC={rf_auc:.4f} F1={rf_f1:.4f} Recall={rf_rec:.4f}")
+    print(f"\n  Random Forest (threshold={custom_threshold:.2f}): AUC={rf_auc:.4f} F1={rf_f1:.4f} Recall={rf_rec:.4f}")
     print("  CV AUC: skipped (runtime optimization)")
     print(classification_report(y_test, rf_pred, target_names=["Non-Serious","Serious"]))
 

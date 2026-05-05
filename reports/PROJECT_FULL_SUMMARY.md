@@ -77,7 +77,7 @@ Key numeric results (from latest run)
 - GLP-1 cohort: 206,974; Control: 160,909
 - PRR (pooled GLP-1): 1.363 (95% CI 1.301–1.429) — WHO-UMC signal: NO
 - Per-drug PRR: Semaglutide=2.566, Liraglutide=2.116, Dulaglutide=1.441, Tirzepatide=1.010, Exenatide=0.284
-- Random Forest AUC = 0.8438, Recall = 0.7334 (primary surveillance metric; CV skipped)
+- Random Forest (threshold=0.15) AUC = 0.8438, Recall = 0.9639 (primary surveillance metric; CV skipped)
 - K-Means k = 5 (default; silhouette skipped, Davies-Bouldin = 0.6964)
 - PCA (scaled): variance spread across multiple components (PC1 = 23.84%, PC2 = 23.05%)
 
