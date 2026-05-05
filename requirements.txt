@@ -7,7 +7,4 @@ seaborn
 scikit-learn
 mlxtend
 joblib
-plotly
-python-pptx
 lxml
-streamlit

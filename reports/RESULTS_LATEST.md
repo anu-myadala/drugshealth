@@ -2,7 +2,7 @@ Results — Latest Run (FAERS 2023Q1 → 2026Q1)
 
 Overview
 --------
-This file captures the key numeric results and figures from the latest end-to-end pipeline run (ETL → EDA → Data Mining → Dashboards → Presentation) using FAERS quarterly ASCII files 2023Q1–2026Q1.
+This file captures the key numeric results and figures from the latest end-to-end pipeline run (ETL → EDA → Data Mining) using FAERS quarterly ASCII files 2023Q1–2026Q1.
 
 Dataset
 -------
@@ -63,13 +63,13 @@ Mann–Whitney U Test (weight difference within GLP-1 cohort)
 Data Mining & Models
 --------------------
 Clustering (K-Means):
-- Optimal k (silhouette) = 5; silhouette = 0.5354; Davies-Bouldin = 0.7530
+- k = 5 (default for performance; silhouette skipped on full dataset); Davies-Bouldin = 0.6964 (sampled)
 - Cluster sizes (GLP-1 cohort):
-  - Cluster 0 (Low-Risk Stable): n = 115,559
-  - Cluster 1 (Moderate-Risk Active): n = 78,085
+  - Cluster 0 (Moderate-Risk Active): n = 76,791
+  - Cluster 1 (Low-Risk Stable): n = 115,606
   - Cluster 2 (Critical Risk): n = 2,718
-  - Cluster 3 (High-Risk Vulnerable): n = 4,844
-  - Cluster 4 (Very High-Risk Complex): n = 5,768
+  - Cluster 3 (High-Risk Vulnerable): n = 4,543
+  - Cluster 4 (Very High-Risk Complex): n = 7,316
 - Representative cluster metrics: age_mean, wt_mean, polypharmacy_mean, opioid_pct, gi_severe_pct, severity_pct, pct_female, tto_mean (see `reports/mining_results.json` for full table)
 
 Apriori Association Rules:
@@ -77,22 +77,30 @@ Apriori Association Rules:
 - Rules satisfying conf≥0.40 & lift≥1.3: 6 (top rules include: GI_SEVERE_EVENT → HOSPITALIZED; INSULIN co-occurrence pairs)
 
 Classification (severity prediction)
-- Dataset: GLP-1 cohort samples used for classification: 206,974
-- Class balance (positive=severity_flag=1): 11.18%
-- Train/test split: n_train = 165,579; n_test = 41,395
+- Dataset: GLP-1 cohort samples used for classification (post-outlier handling): 198,742
+- Class balance (positive=severity_flag=1): 9.90%
+- Train/test split: n_train = 158,993; n_test = 39,749
 
 Logistic Regression (interpretable):
-- AUC = 0.8205
-- F1 = 0.4614
-- Recall = 0.6542
-- Precision = 0.3564
+- AUC = 0.8111
+- F1 = 0.4276
+- Recall = 0.6307
+- Precision = 0.3234
 
 Random Forest (surveillance-focused):
-- AUC = 0.8523
-- F1 = 0.4633
-- Recall = 0.7625 (primary metric)
-- Precision = 0.3327
-- 5-fold CV AUC = 0.8505 ± 0.0020
+- AUC = 0.8438
+- F1 = 0.4298
+- Recall = 0.7334 (primary metric)
+- Precision = 0.3039
+- CV AUC: skipped (runtime optimization)
+
+Extended modeling (feature reduction + alternative classifiers)
+-------------------------------------------------------------
+- PCA explained variance: PC1 = 96.84%, PC2 = 2.28% (cumulative = 99.12%)
+- DBSCAN clusters (PCA sample): 50
+- Decision Tree: Accuracy = 0.8951, Precision = 0.5937, Recall = 0.2009, F1 = 0.3002, ROC-AUC = 0.7880
+- Gaussian Naive Bayes: Accuracy = 0.8662, Precision = 0.3910, Recall = 0.3491, F1 = 0.3689, ROC-AUC = 0.7742
+- Random Forest (comparison on sample): Accuracy = 0.8897, Precision = 0.5151, Recall = 0.2589, F1 = 0.3446, ROC-AUC = 0.7814
 
 Artifacts generated
 -------------------
@@ -100,9 +108,9 @@ Artifacts generated
 - data/processed/glp1_clustered.csv
 - reports/eda_results.json
 - reports/mining_results.json
-- reports/glp1_dashboard.html
-- reports/glp1_dashboard_enhanced.html
-- reports/GLP1_FAERS_Presentation.pptx
+- reports/extended_mining_results.json
+- reports/extended_model_comparison.csv
+- reports/figures/extended_model_comparison_table.png
 - reports/figures/*.png (all EDA & model figures)
 
 Figures and tables referenced in the results above are saved under `reports/figures/`.

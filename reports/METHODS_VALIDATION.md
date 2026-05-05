@@ -2,7 +2,7 @@ Methods & Validation — GLP-1 FAERS Study
 
 Summary
 -------
-This document summarizes the ETL, analysis, and validation steps implemented for the GLP-1 FAERS adverse-event study (FAERS 2023Q1–2026Q1). It is intended to accompany the generated presentation and dashboard.
+This document summarizes the ETL, analysis, and validation steps implemented for the GLP-1 FAERS adverse-event study (FAERS 2023Q1–2026Q1).
 
 1) Data ingestion & ETL
 - Source: FDA FAERS ASCII quarterly zip files (DEMO, DRUG, REAC, OUTC, THER).
@@ -34,7 +34,7 @@ This document summarizes the ETL, analysis, and validation steps implemented for
 - Limitations: FAERS is a spontaneous reporting system — reporting bias, missing denominator, and confounding by indication may affect estimates. PRR is a relative disproportionality metric, not an incidence rate.
 
 6) Reproducibility
-- Scripts: `01_etl.py`, `02_eda_stats.py`, `03_data_mining.py`, `04_dashboard_{plotly,streamlit,enhanced}.py`, `05_presentation.py`.
+- Scripts: `01_etl.py`, `02_eda_stats.py`, `03_data_mining.py`, `06_star_schema_loader.py`.
 - Environment: `requirements.txt` lists Python packages. A `.venv` can be created via `python3 -m venv .venv` followed by `source .venv/bin/activate` and `pip install -r requirements.txt`.
 - Inputs: supply FAERS quarterly zip files and set `FAERS_ZIP_LIST` to a colon-separated list of absolute zip paths, OR place them under FAERS_DIR and leave FAERS_ZIP_LIST unset.
 

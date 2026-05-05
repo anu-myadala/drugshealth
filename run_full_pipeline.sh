@@ -1,5 +1,5 @@
 #!/bin/zsh
-# Run the full ETL → EDA → Data Mining → Dashboard → Presentation pipeline
+# Run the full ETL → EDA → Data Mining pipeline
 set -euo pipefail
 BASEDIR="$(cd "$(dirname "$0")" && pwd)"
 cd "$BASEDIR"
@@ -10,7 +10,5 @@ cd "$BASEDIR"
 python3 01_etl.py
 python3 02_eda_stats.py
 python3 03_data_mining.py
-python3 04_dashboard.py
-python3 05_presentation.py
 
 echo "Pipeline complete. Outputs in reports/"

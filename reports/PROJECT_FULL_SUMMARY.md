@@ -16,7 +16,7 @@ Data & Timeframe
 -----------------
 - FDA FAERS ASCII quarterly zip files (DEMO, DRUG, REAC, OUTC, THER)
 - Study window: 2023Q1 → 2026Q1 (13 consecutive quarters)
-- Scripts are in Python and use `pandas`, `scikit-learn`, `mlxtend`, `plotly`, and `python-pptx`.
+- Scripts are in Python and use `pandas`, `scikit-learn`, and `mlxtend`.
 
 Cohort definitions
 ------------------
@@ -34,10 +34,11 @@ ETL pipeline (what & how)
    - Parse `THER.start_dt` for therapy start date and compute `time_to_onset_days` relative to `event_date`.
 3) Global deduplication: after concatenating all quarters, deduplicate by `caseid` and keep the latest `fda_dt` to avoid double-counting.
 4) Imputation & feature engineering:
-   - Median imputation for `age_yr` and `wt_kg` grouped by `sex_clean` × `cohort`, fallback to global median.
+   - Median imputation for `age_yr` grouped by `sex_clean` × `cohort`, fallback to global median.
    - Polypharmacy count = distinct `prod_ai` per `primaryid`.
    - Concurrent opioid flag from a curated opioid drug list.
    - Additional features: `log_poly`, `age_wt_interaction`.
+   - Formal outlier handling for `wt_kg` using IQR detection (outliers set to NaN for modeling).
 
 Statistical methods
 -------------------
@@ -49,14 +50,17 @@ Statistical methods
 Data mining & modeling
 ----------------------
 - Apriori rules: market-basket items = concurrent medication names (top-40) + outcome flags. Parameters: min_support=0.02, min_confidence=0.40, min_lift=1.3.
-- K-Means clustering: StandardScaler on numeric features, silhouette method for k selection, n_init=10, random_state set for reproducibility.
+- K-Means clustering: StandardScaler on numeric features; MiniBatchKMeans for scalability. Default k=5 (silhouette skipped for performance), Davies-Bouldin index reported on a sample.
+- PCA: formal scree plot and explained variance table.
+- DBSCAN: alternative clustering on PCA space to identify density-based clusters/outliers.
 - Logistic Regression: interpretable coefficients, used for odds ratio communication.
-- Random Forest: tuned for recall; 5-fold cross-validation to report CV AUC.
+- Random Forest: tuned for recall; CV AUC skipped for runtime.
+- Additional classifiers: Decision Tree and Gaussian Naive Bayes with confusion matrices and comparison table.
 
 Metrics & validation
 ---------------------
-- Classification: primary metric = recall (sensitivity). Also report ROC-AUC, F1, precision, and confusion matrices. Use 80/20 train/test split with CV for hyperparameter validation.
-- Clustering: silhouette and Davies-Bouldin indices reported to justify k selection.
+- Classification: primary metric = recall (sensitivity). Also report ROC-AUC, F1, precision, and confusion matrices. Use 80/20 train/test split; CV skipped for runtime on full dataset.
+- Clustering: Davies-Bouldin index reported on a sample; silhouette skipped for runtime.
 - PRR/ROR: 95% CI and WHO-UMC rule followed for signal detection.
 - Sensitivity checks: alternate GI PT lists (broader vs conservative) and TTO plausibility bounds tested; results recorded in logs and can be reproduced by configuration.
 
@@ -64,11 +68,8 @@ Complete chronological steps performed in the project (reproducible script-order
 ---------------------------------------------------------------------------------
 1. `01_etl.py` — read FAERS zips, build `fact_adverse_event.csv` (includes cohort labeling, time-to-onset, polypharmacy, opioid flag, severity flag).
 2. `02_eda_stats.py` — descriptive statistics, Chi-Square, PRR / ROR with 95% CI, Mann–Whitney U, and EDA figures saved to `reports/figures/` and `reports/eda_results.json`.
-3. `03_data_mining.py` — Apriori rules extracted, K-Means clustering, LR/RF training and evaluation, saves `reports/mining_results.json` and model artifacts to `models/`.
-4. `04_dashboard.py` — Plotly interactive dashboard generator (writes `reports/glp1_dashboard.html`).
-5. `04_dashboard_enhanced.py` — Chart.js enhanced static dashboard generator (writes `reports/glp1_dashboard_enhanced.html`).
-6. `04_dashboard_streamlit.py` — Streamlit app for interactive exploration and live RF risk calculator.
-7. `05_presentation.py` — Auto-generate a 14-slide presentation with embedded figures and expanded speaker notes; saves `reports/GLP1_FAERS_Presentation.pptx`.
+3. `03_data_mining.py` — Apriori rules extracted, K-Means clustering, LR/RF training and evaluation, extended PCA/DBSCAN and Decision Tree/Naive Bayes comparisons; saves `reports/mining_results.json`, `reports/extended_mining_results.json`, and model artifacts to `models/`.
+4. `06_star_schema_loader.py` — optional loader that builds a star schema in a SQL database from processed CSVs using `schema/star_schema.sql`.
 
 Key numeric results (from latest run)
 -------------------------------------
@@ -76,15 +77,15 @@ Key numeric results (from latest run)
 - GLP-1 cohort: 206,974; Control: 160,909
 - PRR (pooled GLP-1): 1.363 (95% CI 1.301–1.429) — WHO-UMC signal: NO
 - Per-drug PRR: Semaglutide=2.566, Liraglutide=2.116, Dulaglutide=1.441, Tirzepatide=1.010, Exenatide=0.284
-- Random Forest AUC = 0.8523, Recall = 0.7625 (primary surveillance metric)
-- K-Means best k = 5 (silhouette = 0.5354)
+- Random Forest AUC = 0.8438, Recall = 0.7334 (primary surveillance metric; CV skipped)
+- K-Means k = 5 (default; silhouette skipped, Davies-Bouldin = 0.6964)
 
 Deliverables produced
 ---------------------
 - All processed CSVs and model artifacts under `data/processed/` and `models/`.
 - Reports: `reports/eda_results.json`, `reports/mining_results.json`, `reports/RESULTS_LATEST.md`, `reports/PROJECT_FULL_SUMMARY.md`.
-- Dashboards: `reports/glp1_dashboard.html`, `reports/glp1_dashboard_enhanced.html`, Streamlit app code `04_dashboard_streamlit.py`.
-- Presentation: `reports/GLP1_FAERS_Presentation.pptx` (14 slides) with expanded speaker notes.
+- Extended model outputs: `reports/extended_mining_results.json`, `reports/extended_model_comparison.csv`, `reports/figures/extended_model_comparison_table.png`, and other figures in `reports/figures/`.
+- Star schema DDL and loader: `schema/star_schema.sql`, `06_star_schema_loader.py`.
 
 How to reproduce the analysis
 ----------------------------
@@ -96,9 +97,7 @@ How to reproduce the analysis
 FAERS_ZIP_LIST="/abs/path/faers_ascii_2023q1.zip:...:..." ./.venv/bin/python 01_etl.py
 ./.venv/bin/python 02_eda_stats.py
 ./.venv/bin/python 03_data_mining.py
-./.venv/bin/python 04_dashboard_enhanced.py
-./.venv/bin/python 04_dashboard.py
-./.venv/bin/python 05_presentation.py
+./.venv/bin/python 06_star_schema_loader.py  # optional, loads star schema into DB
 ```
 
 Limitations & ethical considerations
@@ -110,10 +109,10 @@ Limitations & ethical considerations
 Contact & provenance
 --------------------
 - Source code and artifacts are in this repository: `anu-myadala/drugshealth` on GitHub.
-- For details about specific processing choices, see `reports/METHODS_VALIDATION.md` and the presentation speaker notes.
+- For details about specific processing choices, see `reports/METHODS_VALIDATION.md`.
 
 Appendix
 --------
 - Full machine-readable outputs: `reports/eda_results.json` and `reports/mining_results.json`.
 - Figures and tables: `reports/figures/` (age distribution, PRR forest plot, kmeans profiles, ROC curves, apriori rules, heatmaps, etc.).
-- For peer-reviewed write-up: suggested sections and figure/table assignments are included in the repository README and the presentation slide order.
+- For peer-reviewed write-up: suggested sections and figure/table assignments are included in the repository README.

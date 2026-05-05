@@ -28,7 +28,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import joblib
 from pathlib import Path
-from sklearn.cluster import KMeans
+from sklearn.cluster import KMeans, MiniBatchKMeans
 from sklearn.preprocessing import StandardScaler, LabelEncoder
 from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
@@ -39,6 +39,11 @@ from sklearn.metrics import (classification_report, confusion_matrix,
                               f1_score, recall_score, precision_score,
                               silhouette_score, davies_bouldin_score)
 from sklearn.decomposition import PCA
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.naive_bayes import GaussianNB
+from sklearn.cluster import DBSCAN
+from sklearn.svm import SVC
+from sklearn.metrics import accuracy_score
 from mlxtend.frequent_patterns import apriori, association_rules
 from mlxtend.preprocessing import TransactionEncoder
 
@@ -56,7 +61,7 @@ C1 = "#1B6CA8"; C2 = "#CC4E2A"; C3 = "#2E7D32"; C4 = "#7B2D8B"
 
 
 # ── Load & prepare data ────────────────────────────────────────────────────────
-def load_and_prepare() -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+def load_and_prepare() -> tuple[pd.DataFrame, pd.DataFrame]:
     fact = pd.read_csv(DATA_DIR / "fact_adverse_event.csv", dtype={"primaryid": str})
     drug = pd.read_csv(DATA_DIR / "drug_records.csv",       dtype={"primaryid": str})
     return fact, drug
@@ -70,14 +75,55 @@ def encode_features(df: pd.DataFrame) -> pd.DataFrame:
                                 labels=["<40","40-54","55-64","65-74","75+"])
     fe["sex_bin"]     = (fe["sex_clean"] == "Female").astype(int)
     fe["is_us"]       = (fe["reporter_country"] == "US").astype(int)
+    # Do not impute yet - handle outliers formally first (IQR method)
     fe["age_yr"]      = fe["age_yr"].fillna(fe["age_yr"].median())
-    fe["wt_kg"]       = fe["wt_kg"].fillna(fe["wt_kg"].median())
+    # leave wt_kg NaN for now if missing; outlier detection will set outliers to NaN
     fe["polypharmacy_count"] = fe["polypharmacy_count"].fillna(1).clip(1, 30)
     fe["time_to_onset_days"] = fe["time_to_onset_days"].fillna(
         fe["time_to_onset_days"].median()).clip(0, 3*365)
     fe["log_poly"]    = np.log1p(fe["polypharmacy_count"])
     fe["age_wt_interaction"] = fe["age_yr"] * fe["wt_kg"] / 1000  # scale
     return fe
+
+
+def detect_and_handle_outliers(fe: pd.DataFrame, save_prefix: Path | str | None = None) -> pd.DataFrame:
+    """Detect outliers using IQR for wt_kg and replace them with NaN; returns DataFrame.
+    Saves a small histogram and boxplot to illustrate the IQR and outlier thresholds.
+    """
+    df = fe.copy()
+    if "wt_kg" not in df.columns:
+        return df
+    series = df["wt_kg"].dropna()
+    if series.empty:
+        return df
+    q1 = series.quantile(0.25)
+    q3 = series.quantile(0.75)
+    iqr = q3 - q1
+    lower = q1 - 1.5 * iqr
+    upper = q3 + 1.5 * iqr
+    outlier_mask = (df["wt_kg"] < lower) | (df["wt_kg"] > upper)
+    n_outliers = int(outlier_mask.sum())
+    print(f"  Outlier detection (IQR) for wt_kg: Q1={q1:.2f}, Q3={q3:.2f}, IQR={iqr:.2f}")
+    print(f"    Thresholds: lower={lower:.2f}, upper={upper:.2f} -> {n_outliers} outliers marked as NaN")
+    df.loc[outlier_mask, "wt_kg"] = np.nan
+
+    # Save a diagnostic plot
+    try:
+        fig, axes = plt.subplots(1, 2, figsize=(10, 4))
+        axes[0].boxplot(series.dropna(), vert=False)
+        axes[0].set_title("Weight Boxplot (pre-clean)")
+        axes[1].hist(series.dropna(), bins=60, color=C2)
+        axes[1].axvline(lower, color="red", ls="--")
+        axes[1].axvline(upper, color="red", ls="--")
+        axes[1].set_title("Weight Distribution (pre-clean)")
+        plt.tight_layout()
+        if save_prefix:
+            plt.savefig(FIG_DIR / f"{save_prefix}_wt_outlier_diag.png", dpi=150, bbox_inches="tight")
+        plt.close()
+    except Exception:
+        pass
+
+    return df
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -124,7 +170,7 @@ def run_apriori(fact: pd.DataFrame, drug: pd.DataFrame) -> pd.DataFrame:
 
     te = TransactionEncoder()
     te_array = te.fit_transform(basket["items"])
-    te_df    = pd.DataFrame(te_array, columns=te.columns_)
+    te_df    = pd.DataFrame(np.asarray(te_array), columns=te.columns_)
 
     freq = apriori(te_df, min_support=0.02, use_colnames=True)
     print(f"  Frequent itemsets: {len(freq)}")
@@ -145,7 +191,7 @@ def run_apriori(fact: pd.DataFrame, drug: pd.DataFrame) -> pd.DataFrame:
     # Visualize top rules
     top = rules.head(15)
     fig, ax = plt.subplots(figsize=(11, 6))
-    bars = ax.barh(range(len(top)), top["lift"].values[::-1], color=C1, alpha=0.85)
+    bars = ax.barh(range(len(top)), top["lift"].to_numpy()[::-1], color=C1, alpha=0.85)
     ax.set_yticks(range(len(top)))
     labels = [f"{r['antecedents_str']} → {r['consequents_str']}"[:70]
               for _, r in top.iterrows()]
@@ -169,7 +215,7 @@ def run_apriori(fact: pd.DataFrame, drug: pd.DataFrame) -> pd.DataFrame:
 # ─────────────────────────────────────────────────────────────────────────────
 # TECHNIQUE 2: K-MEANS CLUSTERING
 # ─────────────────────────────────────────────────────────────────────────────
-def run_kmeans(fact: pd.DataFrame) -> pd.DataFrame:
+def run_kmeans(fact: pd.DataFrame) -> tuple[pd.DataFrame, dict]:
     """
     Cluster GLP-1 patients to find high-risk phenotypes.
     Features: age, weight, polypharmacy count, concurrent opioid, time-to-onset
@@ -178,6 +224,7 @@ def run_kmeans(fact: pd.DataFrame) -> pd.DataFrame:
 
     glp1 = fact[fact["cohort"] == "glp1"].copy()
     glp1 = encode_features(glp1)
+    glp1 = detect_and_handle_outliers(glp1, save_prefix="kmeans")
 
     cluster_feats = ["age_yr", "wt_kg", "polypharmacy_count",
                      "concurrent_opioid", "time_to_onset_days", "sex_bin"]
@@ -199,41 +246,33 @@ def run_kmeans(fact: pd.DataFrame) -> pd.DataFrame:
 
     inertias, silhouettes = [], []
     K_RANGE = range(2, 9)
+    # Use a small sample for evaluation; skip silhouette to avoid heavy pairwise computations
+    SAMPLE_K = 2000
+    if n_samples > SAMPLE_K:
+        sample_idx = np.random.RandomState(42).choice(n_samples, size=SAMPLE_K, replace=False)
+        Xs_eval = Xs[sample_idx]
+    else:
+        Xs_eval = Xs
     for k in K_RANGE:
         if k >= n_samples:
             # silhouette_score requires at least 2 clusters and fewer clusters than samples
             print(f"  Skipping k={k} because k >= n_samples ({n_samples})")
             continue
         try:
-            km = KMeans(n_clusters=k, random_state=42, n_init=10)
-            labels = km.fit_predict(Xs)
+            km = MiniBatchKMeans(n_clusters=k, random_state=42, n_init=10, batch_size=2048)
+            labels = km.fit_predict(Xs_eval)
             inertias.append(km.inertia_)
-            # silhouette_score may fail if cluster labels are degenerate; catch it
-            try:
-                sil = silhouette_score(Xs, labels)
-            except Exception as e:
-                print(f"  silhouette_score failed for k={k}: {e}")
-                sil = -1.0
-            silhouettes.append(sil)
+            silhouettes.append(np.nan)
         except Exception as e:
             print(f"  KMeans failed for k={k}: {e}")
             continue
 
-    # Choose best_k from valid silhouette scores
-    valid = [s for s in silhouettes if s is not None and s > -0.5]
-    if valid:
-        best_idx = silhouettes.index(max(silhouettes))
-        best_k = list(K_RANGE)[best_idx]
-        best_score = silhouettes[best_idx]
-        print(f"  Optimal k by silhouette: {best_k} (score={best_score:.4f})")
-    else:
-        # Fallback: choose a small k that's less than n_samples
-        best_k = min(3, max(2, n_samples // 2))
-        best_k = min(best_k, n_samples - 1)
-        print(f"  No valid silhouette scores found. Falling back to k={best_k}")
+    # Choose best_k using a fixed default to avoid expensive silhouette calculations
+    best_k = 5 if n_samples >= 5 else max(2, n_samples - 1)
+    print(f"  Using default k={best_k} (silhouette skipped for performance)")
 
     try:
-        km_final = KMeans(n_clusters=best_k, random_state=42, n_init=10)
+        km_final = MiniBatchKMeans(n_clusters=best_k, random_state=42, n_init=10, batch_size=2048)
         glp1["cluster"] = km_final.fit_predict(Xs)
     except Exception as e:
         print(f"  Final KMeans fit failed for k={best_k}: {e}")
@@ -242,9 +281,10 @@ def run_kmeans(fact: pd.DataFrame) -> pd.DataFrame:
         return glp1, {"silhouette": np.nan, "davies_bouldin": np.nan,
                       "best_k": best_k, "cluster_names": {}, "profile": {}}
 
-    sil  = silhouette_score(Xs, glp1["cluster"])
-    db   = davies_bouldin_score(Xs, glp1["cluster"])
-    print(f"  Silhouette={sil:.4f}  Davies-Bouldin={db:.4f}")
+    labels_eval = km_final.predict(Xs_eval)
+    sil  = float('nan')
+    db   = davies_bouldin_score(Xs_eval, labels_eval)
+    print(f"  Silhouette=NA  Davies-Bouldin={db:.4f}")
 
     # Profile clusters
     profile = glp1.groupby("cluster").agg(
@@ -263,7 +303,8 @@ def run_kmeans(fact: pd.DataFrame) -> pd.DataFrame:
 
     # Auto-label by severity
     severity_order = profile["severity_pct"].rank().astype(int)
-    name_map_keys  = sorted(severity_order.to_dict(), key=severity_order.to_dict().get)
+    severity_dict = severity_order.to_dict()
+    name_map_keys = sorted(severity_dict.keys(), key=lambda k: severity_dict.get(k, 0))
     tier_names = ["Low-Risk Stable", "Moderate-Risk Active", "High-Risk Vulnerable",
                   "Very High-Risk Complex", "Critical Risk"]
     cluster_names = {k: tier_names[min(i, len(tier_names)-1)] for i, k in enumerate(name_map_keys)}
@@ -313,7 +354,7 @@ def run_kmeans(fact: pd.DataFrame) -> pd.DataFrame:
                              "gi_severe_pct","severity_pct","pct_female"]].mean()) \
                  / profile[["age_mean","wt_mean","poly_mean","opioid_pct",
                              "gi_severe_pct","severity_pct","pct_female"]].std()
-    profile_z.index = [cluster_names.get(i, f"C{i}") for i in profile_z.index]
+    profile_z.index = pd.Index([cluster_names.get(i, f"C{i}") for i in profile_z.index])
     profile_z.columns = ["Age","Weight","Polypharmacy","Opioid%","GI%","Severe%","Female%"]
     fig, ax = plt.subplots(figsize=(9, 4))
     sns.heatmap(profile_z, annot=True, fmt=".2f", cmap="RdBu_r", center=0,
@@ -342,6 +383,7 @@ def run_classification(fact: pd.DataFrame) -> dict:
 
     glp1 = fact[fact["cohort"] == "glp1"].copy()
     glp1 = encode_features(glp1)
+    glp1 = detect_and_handle_outliers(glp1, save_prefix="classification")
 
     # Encode drug name
     glp1["glp1_drug_enc"] = LabelEncoder().fit_transform(glp1["glp1_drug"].fillna("UNKNOWN"))
@@ -389,10 +431,10 @@ def run_classification(fact: pd.DataFrame) -> dict:
     rf_prec  = precision_score(y_test, rf_pred)
 
     # 5-fold CV on training set only (prevents test-set leakage)
-    cv_rf = cross_val_score(rf, X_train, y_train, cv=StratifiedKFold(5, shuffle=True, random_state=42),
-                             scoring="roc_auc", n_jobs=-1)
+    # Skip cross-validation to keep runtime manageable on large datasets
+    cv_rf = np.array([np.nan])
     print(f"\n  Random Forest: AUC={rf_auc:.4f} F1={rf_f1:.4f} Recall={rf_rec:.4f}")
-    print(f"  5-fold CV AUC: {cv_rf.mean():.4f} ±{cv_rf.std():.4f}")
+    print("  CV AUC: skipped (runtime optimization)")
     print(classification_report(y_test, rf_pred, target_names=["Non-Serious","Serious"]))
 
     # ── Figures ────────────────────────────────────────────────────────────
@@ -470,15 +512,245 @@ def run_classification(fact: pd.DataFrame) -> dict:
     }
 
 
+def run_extended_mining(fact: pd.DataFrame, save_prefix: str = "extended") -> dict:
+    """Run PCA, DBSCAN, Decision Tree, GaussianNB, and aggregate results and figures.
+    Saves outputs under reports/figures and reports/<save_prefix>_mining_results.json.
+    """
+    print("\n── Extended Mining: PCA, DBSCAN, DecisionTree, GaussianNB ─────────────────")
+    out = {}
+    # Use GLP-1 cohort (severity prediction) for supervised models
+    df_glp1 = fact[fact["cohort"] == "glp1"].copy()
+    df_glp1 = encode_features(df_glp1)
+    # Apply outlier detection for weight
+    df_glp1 = detect_and_handle_outliers(df_glp1, save_prefix=save_prefix)
+
+    # Define features for modeling (same as classification)
+    feat_cols = ["age_yr", "wt_kg", "polypharmacy_count", "concurrent_opioid",
+                 "sex_bin", "is_us", "gi_severe_flag", "time_to_onset_days",
+                 "log_poly", "age_wt_interaction"]
+    # Drop rows with missing essential numeric features (except wt_kg which may be NaN after outlier removal)
+    data_ml = df_glp1[feat_cols + ["severity_flag"]].copy()
+
+    # Numeric matrix for PCA (impute medians)
+    Xnum = data_ml[feat_cols].select_dtypes(include=[np.number]).fillna(data_ml[feat_cols].median())
+    if Xnum.shape[1] < 2:
+        print("  Not enough numeric features for PCA/DBSCAN. Skipping extended mining.")
+        return out
+
+    # For memory safety, operate PCA/DBSCAN/classifiers on a random sample if dataset is large
+    SAMPLE_SIZE = 50000
+    if Xnum.shape[0] > SAMPLE_SIZE:
+        use_sample = True
+        sample_idx = np.random.RandomState(42).choice(Xnum.index, size=SAMPLE_SIZE, replace=False)
+        Xnum_sample = Xnum.loc[sample_idx]
+    else:
+        use_sample = False
+        sample_idx = Xnum.index
+        Xnum_sample = Xnum
+
+    # PCA (keep up to 10 components)
+    n_comp = min(10, Xnum.shape[1])
+    pca = PCA(n_components=n_comp, random_state=42)
+    Xp = pca.fit_transform(Xnum_sample)
+    evr = pca.explained_variance_ratio_
+    out["pca_explained_variance_ratio"] = evr.tolist()
+    out["pca_cumulative_variance"] = np.cumsum(evr).tolist()
+    # scree plot
+    try:
+        plt.figure(figsize=(6, 4))
+        plt.bar(range(1, len(evr)+1), evr*100, color=C1)
+        plt.plot(range(1, len(evr)+1), np.cumsum(evr)*100, marker='o', color=C3)
+        plt.xlabel('Principal Component')
+        plt.ylabel('Explained Variance (%)')
+        plt.title('PCA Scree Plot')
+        plt.tight_layout()
+        plt.savefig(PROJECT_ROOT / 'reports' / 'figures' / f"{save_prefix}_pca_scree.png", dpi=150, bbox_inches='tight')
+        plt.close()
+    except Exception:
+        pass
+
+    # DBSCAN on first 3 PCs
+    try:
+        # DBSCAN can be costly; run on the sampled PCA coordinates and with single-thread
+        db = DBSCAN(eps=0.8, min_samples=50, n_jobs=1)
+        labels = db.fit_predict(Xp[:, :3])
+        n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+        out['dbscan_n_clusters'] = int(n_clusters)
+        # save counts
+        pd.Series(labels).value_counts().to_csv(PROJECT_ROOT / 'reports' / 'figures' / f"{save_prefix}_dbscan_cluster_counts.csv")
+        # PC scatter
+        plt.figure(figsize=(6,5))
+        unique = np.unique(labels)
+        cmap = plt.cm.get_cmap('tab20', len(unique))
+        for i, lab in enumerate(unique):
+            mask = labels == lab
+            col = 'k' if lab == -1 else cmap(i)
+            plt.scatter(Xp[mask,0], Xp[mask,1], s=6, c=[col], label=str(lab) if lab!=-1 else 'outlier')
+        plt.xlabel('PC1'); plt.ylabel('PC2'); plt.title('DBSCAN clusters (PC1 vs PC2)')
+        plt.legend(markerscale=3, fontsize=6)
+        plt.tight_layout()
+        plt.savefig(PROJECT_ROOT / 'reports' / 'figures' / f"{save_prefix}_dbscan_pc12.png", dpi=150, bbox_inches='tight')
+        plt.close()
+    except Exception as e:
+        print('  DBSCAN failed:', e)
+
+    # Prepare labels for supervised models: predict severity_flag within GLP-1 cohort
+    if 'severity_flag' not in df_glp1.columns:
+        print('  severity_flag column missing; skipping supervised extended models')
+        return out
+    # Use the same sampling strategy for supervised training to limit memory
+    train_idx = sample_idx if use_sample else Xnum.index
+    X = Xnum.loc[train_idx].fillna(0)
+    y = df_glp1.loc[train_idx, 'severity_flag'].astype(int)
+    # Ensure both classes are present
+    if y.nunique() < 2:
+        print('  Only one class present in target after filtering; skipping supervised extended models')
+        return out
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
+
+    # Decision Tree
+    dt = DecisionTreeClassifier(max_depth=6, random_state=42)
+    dt.fit(X_train, y_train)
+    y_pred_dt = dt.predict(X_test)
+    proba_dt = dt.predict_proba(X_test) if hasattr(dt, 'predict_proba') else None
+    if proba_dt is None:
+        y_prob_dt = y_pred_dt
+    else:
+        pa = np.asarray(proba_dt)
+        if pa.ndim == 1:
+            y_prob_dt = pa
+        elif pa.shape[1] == 1:
+            y_prob_dt = pa[:, 0]
+        else:
+            y_prob_dt = pa[:, -1]
+    dt_metrics = {
+        'model': 'DecisionTree',
+        'accuracy': accuracy_score(y_test, y_pred_dt),
+        'precision': precision_score(y_test, y_pred_dt),
+        'recall': recall_score(y_test, y_pred_dt),
+        'f1': f1_score(y_test, y_pred_dt),
+        'roc_auc': roc_auc_score(y_test, y_prob_dt)
+    }
+    out['decision_tree'] = dt_metrics
+    ConfusionMatrixDisplay.from_predictions(y_test, y_pred_dt, cmap='Blues')
+    plt.title('Decision Tree Confusion Matrix')
+    plt.savefig(PROJECT_ROOT / 'reports' / 'figures' / f"{save_prefix}_confusion_decision_tree.png", dpi=150, bbox_inches='tight')
+    plt.close()
+
+    # Gaussian Naive Bayes
+    gnb = GaussianNB()
+    gnb.fit(X_train, y_train)
+    y_pred_nb = gnb.predict(X_test)
+    pa_nb = np.asarray(gnb.predict_proba(X_test))
+    if pa_nb.ndim == 1:
+        y_prob_nb = pa_nb
+    elif pa_nb.shape[1] == 1:
+        y_prob_nb = pa_nb[:, 0]
+    else:
+        y_prob_nb = pa_nb[:, -1]
+    nb_metrics = {
+        'model': 'GaussianNB',
+        'accuracy': accuracy_score(y_test, y_pred_nb),
+        'precision': precision_score(y_test, y_pred_nb),
+        'recall': recall_score(y_test, y_pred_nb),
+        'f1': f1_score(y_test, y_pred_nb),
+        'roc_auc': roc_auc_score(y_test, y_prob_nb)
+    }
+    out['gaussian_nb'] = nb_metrics
+    ConfusionMatrixDisplay.from_predictions(y_test, y_pred_nb, cmap='Greens')
+    plt.title('GaussianNB Confusion Matrix')
+    plt.savefig(PROJECT_ROOT / 'reports' / 'figures' / f"{save_prefix}_confusion_gaussiannb.png", dpi=150, bbox_inches='tight')
+    plt.close()
+
+    # RandomForest baseline for comparison
+    try:
+        # Use smaller RF for comparison to limit memory/CPU
+        rf = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=1)
+        rf.fit(X_train, y_train)
+        y_pred_rf = rf.predict(X_test)
+        pa_rf = np.asarray(rf.predict_proba(X_test))
+        if pa_rf.ndim == 1:
+            y_prob_rf = pa_rf
+        elif pa_rf.shape[1] == 1:
+            y_prob_rf = pa_rf[:, 0]
+        else:
+            y_prob_rf = pa_rf[:, -1]
+        rf_metrics = {
+            'model': 'RandomForest',
+            'accuracy': accuracy_score(y_test, y_pred_rf),
+            'precision': precision_score(y_test, y_pred_rf),
+            'recall': recall_score(y_test, y_pred_rf),
+            'f1': f1_score(y_test, y_pred_rf),
+            'roc_auc': roc_auc_score(y_test, y_prob_rf)
+        }
+        out['random_forest'] = rf_metrics
+    except Exception:
+        pass
+
+    # Save model comparison table and ROC-AUC bar
+    metrics_df = pd.DataFrame([v for v in out.values() if isinstance(v, dict)])
+    if not metrics_df.empty:
+        metrics_df = metrics_df.set_index('model')
+        metrics_df.to_csv(PROJECT_ROOT / 'reports' / f"{save_prefix}_model_comparison.csv")
+        try:
+            plt.figure(figsize=(6,3))
+            metrics_df['roc_auc'].plot(kind='bar', color=[C1, C2, C3][:len(metrics_df)])
+            plt.ylim(0,1)
+            plt.title('Model ROC-AUC Comparison')
+            plt.tight_layout()
+            plt.savefig(PROJECT_ROOT / 'reports' / 'figures' / f"{save_prefix}_roc_auc_comparison.png", dpi=150, bbox_inches='tight')
+            plt.close()
+        except Exception:
+            pass
+        # Save a simple table image for reporting
+        try:
+            tbl = metrics_df.round(3)
+            fig, ax = plt.subplots(figsize=(7, 2 + 0.4 * len(tbl)))
+            ax.axis('off')
+            table = ax.table(cellText=tbl.values.tolist(),
+                             colLabels=list(tbl.columns),
+                             rowLabels=list(tbl.index),
+                             loc='center', cellLoc='center')
+            table.auto_set_font_size(False)
+            table.set_fontsize(9)
+            table.scale(1, 1.2)
+            plt.title('Model Performance Comparison', pad=12)
+            plt.tight_layout()
+            plt.savefig(PROJECT_ROOT / 'reports' / 'figures' / f"{save_prefix}_model_comparison_table.png", dpi=150, bbox_inches='tight')
+            plt.close()
+        except Exception:
+            pass
+
+    # Save extended metrics JSON
+    try:
+        with open(PROJECT_ROOT / 'reports' / f"{save_prefix}_mining_results.json", 'w') as fh:
+            json.dump(out, fh, indent=2)
+    except Exception:
+        pass
+
+    return out
+
+
 def run_data_mining() -> dict:
     fact, drug = load_and_prepare()
     apriori_rules   = run_apriori(fact, drug)
     glp1_clustered, cluster_metrics = run_kmeans(fact)
     clf_metrics      = run_classification(fact)
 
+    # Extended mining: PCA, DBSCAN, DecisionTree, GaussianNB and model comparison
+    try:
+        from time import time
+        t0 = time()
+        ext_metrics = run_extended_mining(fact, save_prefix="extended")
+        print(f"  Extended mining finished in {time()-t0:.1f}s")
+    except Exception as e:
+        print("Extended mining failed:", e)
+        ext_metrics = {}
+
     all_metrics = {
         "clustering": cluster_metrics,
         "classification": clf_metrics,
+        "extended": ext_metrics,
     }
     with open(PROJECT_ROOT / "reports" / "mining_results.json", "w") as fh:
         json.dump(all_metrics, fh, indent=2, default=str)

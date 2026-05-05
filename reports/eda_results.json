@@ -1,30 +1,30 @@
 {
   "descriptive_stats": {
     "glp1": {
-      "n": 18420,
-      "age_mean": 61.96,
-      "age_median": 62.01,
-      "age_std": 10.98,
-      "wt_mean_kg": 101.06,
-      "wt_median_kg": 101.06,
-      "pct_female": 57.8,
-      "pct_gi_severe": 10.03,
-      "pct_severity_1": 58.8,
-      "pct_opioid": 18.7,
-      "poly_median": 5.0
+      "n": 206974,
+      "age_mean": 56.23,
+      "age_median": 56.0,
+      "age_std": 11.63,
+      "wt_mean_kg": 91.8,
+      "wt_median_kg": 86.6,
+      "pct_female": 60.7,
+      "pct_gi_severe": 2.25,
+      "pct_severity_1": 11.2,
+      "pct_opioid": 1.3,
+      "poly_median": 1.0
     },
     "control": {
-      "n": 7560,
-      "age_mean": 58.94,
-      "age_median": 58.89,
-      "age_std": 11.92,
-      "wt_mean_kg": 91.4,
-      "wt_median_kg": 91.02,
-      "pct_female": 51.9,
-      "pct_gi_severe": 3.08,
-      "pct_severity_1": 50.1,
-      "pct_opioid": 12.7,
-      "poly_median": 3.0
+      "n": 160909,
+      "age_mean": 65.89,
+      "age_median": 68.0,
+      "age_std": 12.27,
+      "wt_mean_kg": 83.29,
+      "wt_median_kg": 85.0,
+      "pct_female": 44.6,
+      "pct_gi_severe": 1.65,
+      "pct_severity_1": 46.6,
+      "pct_opioid": 10.3,
+      "poly_median": 6.0
     }
   },
   "chi_square": {
@@ -32,87 +32,87 @@
     "h0": "GI event incidence is independent of GLP-1 vs Control drug use",
     "contingency_table": {
       "No GI Severe": {
-        "control": 7327,
-        "glp1": 16573
+        "control": 158257,
+        "glp1": 202323
       },
       "GI Severe": {
-        "control": 233,
-        "glp1": 1847
+        "control": 2652,
+        "glp1": 4651
       }
     },
-    "chi2_statistic": 350.0928,
-    "p_value": 4.045148678054188e-78,
+    "chi2_statistic": 166.6339,
+    "p_value": 4.021508940924884e-38,
     "degrees_of_freedom": 1,
-    "cramers_v": 0.1161,
+    "cramers_v": 0.0213,
     "reject_h0": "True",
-    "interpretation": "\u03c7\u00b2(1) = 350.09, p < 0.001. Strong statistical evidence that GLP-1 use is associated with higher GI event incidence. Cram\u00e9r's V = 0.116 (moderate effect)."
+    "interpretation": "\u03c7\u00b2(1) = 166.63, p < 0.001. Strong statistical evidence that GLP-1 use is associated with higher GI event incidence. Cram\u00e9r's V = 0.021 (small effect)."
   },
   "prr": {
     "test": "Proportional Reporting Ratio (PRR)",
     "contingency": {
-      "a_glp1_gi": 1847,
-      "b_glp1_no_gi": 16573,
-      "c_ctrl_gi": 233,
-      "d_ctrl_no_gi": 7327
+      "a_glp1_gi": 4651,
+      "b_glp1_no_gi": 202323,
+      "c_ctrl_gi": 2652,
+      "d_ctrl_no_gi": 158257
     },
-    "prr": 3.253,
+    "prr": 1.363,
     "prr_95ci": [
-      2.847,
-      3.719
+      1.301,
+      1.429
     ],
-    "ror": 3.505,
+    "ror": 1.372,
     "ror_95ci": [
-      3.05,
-      4.027
+      1.307,
+      1.439
     ],
-    "chi2": 350.093,
-    "p_value": 4.045148678054188e-78,
+    "chi2": 166.634,
+    "p_value": 4.021508940924942e-38,
     "signal_threshold": {
-      "prr_ge_2": true,
+      "prr_ge_2": false,
       "chi2_ge_4": "True",
       "n_ge_3": true
     },
-    "who_umc_signal": true,
+    "who_umc_signal": false,
     "per_drug_prr": {
       "SEMAGLUTIDE": {
-        "n": 8878,
-        "gi_events": 1098,
-        "prr": 4.013
+        "n": 61976,
+        "gi_events": 2621,
+        "prr": 2.566
       },
       "LIRAGLUTIDE": {
-        "n": 2534,
-        "gi_events": 191,
-        "prr": 2.446
+        "n": 6738,
+        "gi_events": 235,
+        "prr": 2.116
       },
       "DULAGLUTIDE": {
-        "n": 1659,
-        "gi_events": 98,
-        "prr": 1.917
+        "n": 23579,
+        "gi_events": 560,
+        "prr": 1.441
       },
       "TIRZEPATIDE": {
-        "n": 4447,
-        "gi_events": 425,
-        "prr": 3.101
+        "n": 136324,
+        "gi_events": 2269,
+        "prr": 1.01
       },
       "EXENATIDE": {
-        "n": 902,
-        "gi_events": 35,
-        "prr": 1.259
+        "n": 2990,
+        "gi_events": 14,
+        "prr": 0.284
       }
     },
-    "interpretation": "PRR = 3.25 (95% CI 2.85\u20133.72). ROR = 3.50 (95% CI 3.05\u20134.03). WHO-UMC regulatory signal detected (PRR\u22652, \u03c7\u00b2\u22654, n\u22653)."
+    "interpretation": "PRR = 1.36 (95% CI 1.30\u20131.43). ROR = 1.37 (95% CI 1.31\u20131.44). Signal below WHO-UMC threshold."
   },
   "mann_whitney": {
     "test": "Mann-Whitney U Test (Weight: Severe GI vs Non-Severe GI, GLP-1 cohort)",
     "h0": "Median weight is equal in severe vs non-severe GI event patients",
-    "n_severe": 1847,
-    "n_non_severe": 16573,
-    "median_severe_kg": 100.5,
-    "median_non_severe_kg": 101.1,
-    "u_statistic": 15387692.5,
-    "p_value": 0.7034189646835174,
-    "effect_size_r": -0.0054,
-    "reject_h0": "False",
-    "interpretation": "U = 15387692, p = 0.7034. Median weight: severe = 100.5 kg vs non-severe = 101.1 kg. Effect size r = -0.005 (negligible). Not statistically significant difference."
+    "n_severe": 4651,
+    "n_non_severe": 202323,
+    "median_severe_kg": 95.0,
+    "median_non_severe_kg": 86.6,
+    "u_statistic": 526204079.5,
+    "p_value": 2.741861821623555e-52,
+    "effect_size_r": -0.1184,
+    "reject_h0": "True",
+    "interpretation": "U = 526204080, p < 0.001. Median weight: severe = 95.0 kg vs non-severe = 86.6 kg. Effect size r = -0.118 (small). Statistically significant difference."
   }
 }
