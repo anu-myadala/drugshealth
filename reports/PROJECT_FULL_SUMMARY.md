@@ -80,6 +80,21 @@ Key numeric results (from latest run)
 - Random Forest AUC = 0.8438, Recall = 0.7334 (primary surveillance metric; CV skipped)
 - K-Means k = 5 (default; silhouette skipped, Davies-Bouldin = 0.6964)
 
+Random Forest feature importances (Top 10)
+-----------------------------------------
+| Feature | Importance |
+|---|---|
+| is_us | 0.2451 |
+| age_wt_interaction | 0.1602 |
+| age_yr | 0.1314 |
+| time_to_onset_days | 0.1037 |
+| polypharmacy_count | 0.1006 |
+| log_poly | 0.0871 |
+| gi_severe_flag | 0.0816 |
+| wt_kg | 0.0732 |
+| sex_bin | 0.0108 |
+| concurrent_opioid | 0.0063 |
+
 Deliverables produced
 ---------------------
 - All processed CSVs and model artifacts under `data/processed/` and `models/`.

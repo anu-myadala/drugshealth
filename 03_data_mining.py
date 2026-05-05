@@ -688,7 +688,9 @@ def run_extended_mining(fact: pd.DataFrame, save_prefix: str = "extended") -> di
 
         # Feature importance plot (top 15)
         try:
-            fi = pd.Series(rf.feature_importances_, index=feat_cols).sort_values().tail(15)
+            fi = pd.Series(rf.feature_importances_, index=feat_cols).sort_values()
+            fi.tail(15).to_csv(PROJECT_ROOT / 'reports' / f"{save_prefix}_rf_feature_importances.csv")
+            fi = fi.tail(15)
             plt.figure(figsize=(6, 5))
             fi.plot(kind='barh', color=C3, alpha=0.85)
             plt.xlabel('Importance (Gini)')
