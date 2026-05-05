@@ -96,11 +96,11 @@ Random Forest (surveillance-focused):
 
 Extended modeling (feature reduction + alternative classifiers)
 -------------------------------------------------------------
-- PCA explained variance: PC1 = 96.84%, PC2 = 2.28% (cumulative = 99.12%)
-- DBSCAN clusters (PCA sample, tuned): 7
-- Decision Tree (balanced): Accuracy = 0.8209, Precision = 0.3432, Recall = 0.6554, F1 = 0.4504, ROC-AUC = 0.7902
+- PCA (scaled) explained variance: PC1 = 23.84%, PC2 = 23.05% (cumulative = 46.89%)
+- DBSCAN clusters (PCA sample, tuned): 1
+- Decision Tree (balanced, max_depth=5): Accuracy = 0.7911, Precision = 0.3074, Recall = 0.6902, F1 = 0.4253, ROC-AUC = 0.7879
 - Gaussian Naive Bayes: Accuracy = 0.8662, Precision = 0.3910, Recall = 0.3491, F1 = 0.3689, ROC-AUC = 0.7742
-- Random Forest (balanced, comparison on sample): Accuracy = 0.8557, Precision = 0.3637, Recall = 0.3848, F1 = 0.3740, ROC-AUC = 0.6973
+- Random Forest (balanced_subsample): Accuracy = 0.8562, Precision = 0.3671, Recall = 0.3920, F1 = 0.3791, ROC-AUC = 0.6993
 
 Artifacts generated
 -------------------

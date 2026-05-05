@@ -548,10 +548,12 @@ def run_extended_mining(fact: pd.DataFrame, save_prefix: str = "extended") -> di
         sample_idx = Xnum.index
         Xnum_sample = Xnum
 
-    # PCA (keep up to 10 components)
+    # PCA (keep up to 10 components) with StandardScaler normalization
     n_comp = min(10, Xnum.shape[1])
+    scaler_pca = StandardScaler()
+    Xnum_sample_scaled = scaler_pca.fit_transform(Xnum_sample)
     pca = PCA(n_components=n_comp, random_state=42)
-    Xp = pca.fit_transform(Xnum_sample)
+    Xp = pca.fit_transform(Xnum_sample_scaled)
     evr = pca.explained_variance_ratio_
     out["pca_explained_variance_ratio"] = evr.tolist()
     out["pca_cumulative_variance"] = np.cumsum(evr).tolist()
@@ -610,7 +612,7 @@ def run_extended_mining(fact: pd.DataFrame, save_prefix: str = "extended") -> di
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
     # Decision Tree
-    dt = DecisionTreeClassifier(max_depth=6, random_state=42, class_weight="balanced")
+    dt = DecisionTreeClassifier(max_depth=5, random_state=42, class_weight="balanced")
     dt.fit(X_train, y_train)
     y_pred_dt = dt.predict(X_test)
     proba_dt = dt.predict_proba(X_test) if hasattr(dt, 'predict_proba') else None
@@ -666,7 +668,7 @@ def run_extended_mining(fact: pd.DataFrame, save_prefix: str = "extended") -> di
     # RandomForest baseline for comparison
     try:
         # Use smaller RF for comparison to limit memory/CPU
-        rf = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=1, class_weight="balanced")
+        rf = RandomForestClassifier(n_estimators=100, random_state=42, n_jobs=1, class_weight="balanced_subsample")
         rf.fit(X_train, y_train)
         y_pred_rf = rf.predict(X_test)
         pa_rf = np.asarray(rf.predict_proba(X_test))

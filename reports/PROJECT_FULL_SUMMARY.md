@@ -79,6 +79,7 @@ Key numeric results (from latest run)
 - Per-drug PRR: Semaglutide=2.566, Liraglutide=2.116, Dulaglutide=1.441, Tirzepatide=1.010, Exenatide=0.284
 - Random Forest AUC = 0.8438, Recall = 0.7334 (primary surveillance metric; CV skipped)
 - K-Means k = 5 (default; silhouette skipped, Davies-Bouldin = 0.6964)
+- PCA (scaled): variance spread across multiple components (PC1 = 23.84%, PC2 = 23.05%)
 
 Random Forest feature importances (Top 10)
 -----------------------------------------
