@@ -23,7 +23,7 @@
     0.9999983730086972,
     1.0
   ],
-  "dbscan_n_clusters": 50,
+  "dbscan_n_clusters": 7,
   "decision_tree": {
     "model": "DecisionTree",
     "accuracy": 0.8209,

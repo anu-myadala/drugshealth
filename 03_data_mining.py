@@ -572,7 +572,8 @@ def run_extended_mining(fact: pd.DataFrame, save_prefix: str = "extended") -> di
     # DBSCAN on first 3 PCs
     try:
         # DBSCAN can be costly; run on the sampled PCA coordinates and with single-thread
-        db = DBSCAN(eps=0.8, min_samples=50, n_jobs=1)
+        # Increase min_samples to reduce micro-clusters and enforce larger density groups
+        db = DBSCAN(eps=1.0, min_samples=100, n_jobs=1)
         labels = db.fit_predict(Xp[:, :3])
         n_clusters = len(set(labels)) - (1 if -1 in labels else 0)
         out['dbscan_n_clusters'] = int(n_clusters)
@@ -684,6 +685,19 @@ def run_extended_mining(fact: pd.DataFrame, save_prefix: str = "extended") -> di
             'roc_auc': roc_auc_score(y_test, y_prob_rf)
         }
         out['random_forest'] = rf_metrics
+
+        # Feature importance plot (top 15)
+        try:
+            fi = pd.Series(rf.feature_importances_, index=feat_cols).sort_values().tail(15)
+            plt.figure(figsize=(6, 5))
+            fi.plot(kind='barh', color=C3, alpha=0.85)
+            plt.xlabel('Importance (Gini)')
+            plt.title('Random Forest Feature Importances (Top 15)')
+            plt.tight_layout()
+            plt.savefig(PROJECT_ROOT / 'reports' / 'figures' / f"{save_prefix}_rf_feature_importances.png", dpi=150, bbox_inches='tight')
+            plt.close()
+        except Exception:
+            pass
     except Exception:
         pass
 
