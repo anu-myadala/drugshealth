@@ -37,7 +37,3 @@ This document summarizes the ETL, analysis, and validation steps implemented for
 - Scripts: `01_etl.py`, `02_eda_stats.py`, `03_data_mining.py`, `06_star_schema_loader.py`.
 - Environment: `requirements.txt` lists Python packages. A `.venv` can be created via `python3 -m venv .venv` followed by `source .venv/bin/activate` and `pip install -r requirements.txt`.
 - Inputs: supply FAERS quarterly zip files and set `FAERS_ZIP_LIST` to a colon-separated list of absolute zip paths, OR place them under FAERS_DIR and leave FAERS_ZIP_LIST unset.
-
-Contact
--------
-For reproducibility questions or to request de-identified intermediate datasets, contact the study author and reference the GitHub repository.
