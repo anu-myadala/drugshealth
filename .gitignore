@@ -1,12 +1,12 @@
 /.venv
+/data/raw/
 /data/processed/*.csv
 /data/processed/*.pkl
 /data/processed/*.zip
-/reports/*.pptx
-/reports/glp1_dashboard.html
-/reports/figures/*.png
 /models/
 /__pycache__/
 .DS_Store
 /.ipynb_checkpoints
+*.zip
+*.pyc
 # keep requirements.txt under version control

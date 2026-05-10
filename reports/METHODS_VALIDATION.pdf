@@ -1,0 +1,114 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Courier >>
+endobj
+4 0 obj
+<< /Length 4202 >>
+stream
+BT /F2 18 Tf 54 730 Td (Methods and Validation) Tj ET
+BT /F1 9 Tf 54 706 Td (METHODS_VALIDATION.md) Tj ET
+BT /F1 10 Tf 54 688 Td (Methods & Validation  -  GLP-1 FAERS Study) Tj ET
+BT /F1 10 Tf 54 667 Td (Summary) Tj ET
+BT /F1 10 Tf 54 653 Td (-------) Tj ET
+BT /F1 10 Tf 54 639 Td (This document summarizes the ETL, analysis, and validation steps implemented for the) Tj ET
+BT /F1 10 Tf 54 625 Td (GLP-1 FAERS adverse-event study \(FAERS 2023Q1-2026Q1\).) Tj ET
+BT /F1 10 Tf 54 604 Td (1\) Data ingestion & ETL) Tj ET
+BT /F1 10 Tf 54 590 Td (- Source: FDA FAERS ASCII quarterly zip files \(DEMO, DRUG, REAC, OUTC, THER\).) Tj ET
+BT /F1 10 Tf 54 576 Td (- Input ordering: FAERS_ZIP_LIST environment variable or FAERS_DIR lookup.) Tj ET
+BT /F1 10 Tf 54 562 Td (- Per-quarter processing: read tables, normalize primaryid/caseid, deduplicate DEMO per-) Tj ET
+BT /F1 10 Tf 54 548 Td (quarter \(keep latest caseversion/fda_dt\), tag GLP-1 & control drugs by active ingredient) Tj ET
+BT /F1 10 Tf 54 534 Td (string matching, identify GI PTs using a conservative MedDRA term list.) Tj ET
+BT /F1 10 Tf 54 520 Td (- Global deduplication: after concatenating quarters, deduplicate by caseid keeping) Tj ET
+BT /F1 10 Tf 54 506 Td (latest fda_dt \(to avoid double-counted reports across quarters\).) Tj ET
+BT /F1 10 Tf 54 492 Td (- Output: `data/processed/fact_adverse_event.csv`, `data/processed/drug_records.csv`,) Tj ET
+BT /F1 10 Tf 54 478 Td (`data/processed/reaction_records.csv`.) Tj ET
+BT /F1 10 Tf 54 457 Td (2\) Key preprocessing choices & rationale) Tj ET
+BT /F1 10 Tf 54 443 Td (- Drug matching: simple case-insensitive substring matching of `prod_ai` to identify) Tj ET
+BT /F1 10 Tf 54 429 Td (GLP-1s and controls. This favors recall of brand/generic mentions in a noisy field.) Tj ET
+BT /F1 10 Tf 54 415 Td (- GI mapping: curated list of MedDRA PTs selected to reduce false positives in the PRR) Tj ET
+BT /F1 10 Tf 54 401 Td (background. A `GI_BROAD` set is also available for sensitivity checks.) Tj ET
+BT /F1 10 Tf 54 387 Td (- Time-to-onset \(TTO\): computed from THER.start_dt parsed as YYYYMMDD when available;) Tj ET
+BT /F1 10 Tf 54 373 Td (TTO filtered with bounds \(TTO_MIN_DAYS, TTO_MAX_DAYS\) to remove implausible intervals.) Tj ET
+BT /F1 10 Tf 54 359 Td (- Missing values: Median imputation for `age_yr` and `wt_kg` grouped by `sex_clean` x) Tj ET
+BT /F1 10 Tf 54 345 Td (`cohort`, with fallback to global median. This preserves group medians and avoids model) Tj ET
+BT /F1 10 Tf 54 331 Td (collapse due to NaNs.) Tj ET
+BT /F1 10 Tf 54 310 Td (3\) EDA & statistical testing) Tj ET
+BT /F1 10 Tf 54 296 Td (- Descriptives: cohort counts, percent female, median age/weight, quarterly trends.) Tj ET
+BT /F1 10 Tf 54 282 Td (- Chi-Square test: 2x2 contingency \(GLP-1 vs control x GI severe vs not\). Cramér's V) Tj ET
+BT /F1 10 Tf 54 268 Td (calculated for effect size.) Tj ET
+BT /F1 10 Tf 54 254 Td (- PRR: computed as \(a/\(a+b\)\) / \(c/\(c+d\)\) with Wald 95% CI on log\(PRR\). WHO-UMC signal) Tj ET
+BT /F1 10 Tf 54 240 Td (criteria used: PRR >= 2, chi^2 >= 4, n >= 3.) Tj ET
+BT /F1 10 Tf 54 226 Td (- Mann-Whitney U: used for weight comparisons due to non-normal distribution.) Tj ET
+BT /F1 10 Tf 54 205 Td (4\) Data mining & modeling) Tj ET
+BT /F1 10 Tf 54 191 Td (- Apriori: transaction = set of concurrent drugs \(top-N\) + outcome labels \(HOSPITALIZED,) Tj ET
+BT /F1 10 Tf 54 177 Td (GI_SEVERE_EVENT\). Parameters: min_support=0.02, min_confidence=0.40, min_lift=1.3.) Tj ET
+BT /F1 10 Tf 54 163 Td (- K-Means: features scaled with StandardScaler; silhouette method used to choose k;) Tj ET
+BT /F1 10 Tf 54 149 Td (cluster profiling via medians and rates.) Tj ET
+BT /F1 10 Tf 54 135 Td (- Classification: Logistic Regression \(interpretable coefficients -> ORs\) and Random) Tj ET
+BT /F1 10 Tf 54 121 Td (Forest \(high recall\). Feature engineering: log\(polypharmacy\), agexweight interaction,) Tj ET
+BT /F1 10 Tf 54 107 Td (label encoding for `glp1_drug`. Primary metric: recall \(sensitivity\) to minimize missed) Tj ET
+BT /F1 10 Tf 54 93 Td (severe outcomes. RF cross-validation: 5-fold CV for AUC reporting.) Tj ET
+BT /F1 10 Tf 54 72 Td (5\) Validation & sensitivity checks) Tj ET
+endstream
+endobj
+5 0 obj
+<< /Length 1815 >>
+stream
+BT /F1 10 Tf 54 730 Td (- 5-fold CV performed for Random Forest AUC; reported mean +/- std in) Tj ET
+BT /F1 10 Tf 54 716 Td (`reports/mining_results.json`.) Tj ET
+BT /F1 10 Tf 54 702 Td (- Sensitivity analyses: alternate GI term sets \(broad vs conservative\) and TTO bounds) Tj ET
+BT /F1 10 Tf 54 688 Td (were tested; results compared to primary analysis  -  differences are reported in logs and) Tj ET
+BT /F1 10 Tf 54 674 Td (can be reproduced via config.) Tj ET
+BT /F1 10 Tf 54 660 Td (- Limitations: FAERS is a spontaneous reporting system  -  reporting bias, missing) Tj ET
+BT /F1 10 Tf 54 646 Td (denominator, and confounding by indication may affect estimates. PRR is a relative) Tj ET
+BT /F1 10 Tf 54 632 Td (disproportionality metric, not an incidence rate.) Tj ET
+BT /F1 10 Tf 54 611 Td (6\) Reproducibility) Tj ET
+BT /F1 10 Tf 54 597 Td (- Scripts: `01_etl.py`, `02_eda_stats.py`, `03_data_mining.py`,) Tj ET
+BT /F1 10 Tf 54 583 Td (`06_star_schema_loader.py`.) Tj ET
+BT /F1 10 Tf 54 569 Td (- Environment: `requirements.txt` lists Python packages. A `.venv` can be created via) Tj ET
+BT /F1 10 Tf 54 555 Td (`python3 -m venv .venv` followed by `source .venv/bin/activate` and `pip install -r) Tj ET
+BT /F1 10 Tf 54 541 Td (requirements.txt`.) Tj ET
+BT /F1 10 Tf 54 527 Td (- Inputs: supply FAERS quarterly zip files and set `FAERS_ZIP_LIST` to a colon-separated) Tj ET
+BT /F1 10 Tf 54 513 Td (list of absolute zip paths, OR place them under FAERS_DIR and leave FAERS_ZIP_LIST) Tj ET
+BT /F1 10 Tf 54 499 Td (unset.) Tj ET
+BT /F1 10 Tf 54 478 Td (Contact) Tj ET
+BT /F1 10 Tf 54 464 Td (-------) Tj ET
+BT /F1 10 Tf 54 450 Td (For reproducibility questions or to request de-identified intermediate datasets, contact) Tj ET
+BT /F1 10 Tf 54 436 Td (the study author and reference the GitHub repository.) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 4 0 R >>
+endobj
+7 0 obj
+<< /Type /Page /Parent 8 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 1 0 R /F2 2 0 R /F3 3 0 R >> >> /Contents 5 0 R >>
+endobj
+8 0 obj
+<< /Type /Pages /Kids [6 0 R 7 0 R] /Count 2 >>
+endobj
+9 0 obj
+<< /Type /Catalog /Pages 8 0 R >>
+endobj
+xref
+0 10
+0000000000 65535 f 
+0000000009 00000 n 
+0000000079 00000 n 
+0000000154 00000 n 
+0000000222 00000 n 
+0000004476 00000 n 
+0000006343 00000 n 
+0000006489 00000 n 
+0000006635 00000 n 
+0000006698 00000 n 
+trailer
+<< /Size 10 /Root 9 0 R >>
+startxref
+6747
+%%EOF

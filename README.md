@@ -2,6 +2,18 @@
 
 This repository contains an end-to-end pipeline to analyze FDA FAERS adverse event data for GLP-1 receptor agonists.
 
+## Submission Files
+
+- Final presentation: `reports/GLP1_CMPE255_Final_Main_Anu.pptx`
+- HTML demo dashboard: `demo/GLP1_FAERS_Risk_Simulator.html`
+- Combined result summary: `reports/PROJECT_FULL_SUMMARY.md` and `reports/PROJECT_FULL_SUMMARY.pdf`
+- Methods and validation: `reports/METHODS_VALIDATION.md` and `reports/METHODS_VALIDATION.pdf`
+- Latest numeric results: `reports/RESULTS_LATEST.md`
+- Generated visuals: `reports/figures/*.png`
+
+The raw FAERS ZIP files and processed CSV/model outputs are intentionally not
+committed because they are large and can be regenerated from the scripts.
+
 Quick start (macOS / zsh):
 
 1. Install Python dependencies (prefer a venv):
@@ -27,6 +39,8 @@ export FAERS_ZIP_LIST="/Users/anumyad/Downloads/faers_ascii_2023q1.zip:/Users/an
 - Figures: `reports/figures/*.png`
 - EDA & mining JSON summaries: `reports/eda_results.json`, `reports/mining_results.json`, `reports/extended_mining_results.json`
 - Model comparison table: `reports/extended_model_comparison.csv` and `reports/figures/extended_model_comparison_table.png`
+- HTML demo dashboard: `demo/GLP1_FAERS_Risk_Simulator.html`
+- Presentation and summary PDFs under `reports/`
 
 Notes:
 - The pipeline is designed to run on the full FAERS quarterly ZIPs you provide — these can be large. Ensure you have sufficient disk space.
