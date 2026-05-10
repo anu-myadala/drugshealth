@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>GLP-1 FAERS Risk Simulator</title>
+
+<script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+<script src="https://unpkg.com/prop-types@15.8.1/prop-types.min.js"></script>
+<script src="https://unpkg.com/recharts@2.1.12/umd/Recharts.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.24.7/babel.min.js"></script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&family=Poppins:wght@600;700&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    /* PPTX Matched Palette */
+    --bg-0: #050B14; 
+    --bg-1: #0A1628; 
+    --bg-2: #162A50; 
+    --accent-teal: #00D4AA; 
+    --accent-orange: #FF6B35; 
+    --accent-yellow: #FFD166; 
+    --accent-rose: #EF476F;
+    --text-primary: #E8F4F8; 
+    --text-secondary: #8BAFC8; 
+    --text-muted: #4A6D87;
+    --border: rgba(0, 212, 170, 0.2); 
+    --border-hover: rgba(0, 212, 170, 0.5);
+    --card-bg: rgba(10, 22, 40, 0.85); 
+    --signal-threshold: #FF6B35;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg-0); color: var(--text-primary);
+    font-family: 'Inter', sans-serif; min-height: 100vh; overflow-x: hidden;
+  }
+  body::before {
+    content: ''; position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: radial-gradient(circle at 15% 50%, rgba(0,212,170,0.05) 0%, transparent 50%),
+                radial-gradient(circle at 85% 30%, rgba(255,107,53,0.03) 0%, transparent 50%);
+    pointer-events: none; z-index: 0;
+  }
+
+  #root { position: relative; z-index: 1; }
+
+  /* Header & Navigation */
+  .header {
+    background: rgba(5, 11, 20, 0.95);
+    border-bottom: 1px solid var(--border); backdrop-filter: blur(10px);
+    position: sticky; top: 0; z-index: 100;
+  }
+  .header-top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 20px 32px; border-bottom: 1px solid rgba(0,212,170,0.1);
+  }
+  .logo-area { display: flex; align-items: center; gap: 16px; }
+  .logo-pill {
+    background: var(--accent-teal); color: var(--bg-0);
+    border-radius: 4px; padding: 6px 12px; font-family: 'Poppins', sans-serif;
+    font-size: 22px; font-weight: 700; line-height: 1;
+  }
+  .logo-text h1 { font-family: 'Poppins', sans-serif; font-size: 20px; font-weight: 600; color: var(--text-primary); margin-bottom: 4px; }
+  .logo-text p { font-size: 11px; color: var(--text-muted); font-family: 'Space Mono', monospace; text-transform: uppercase; }
+
+  /* KPIs */
+  .kpi-strip { display: flex; border-bottom: 1px solid var(--border); background: var(--bg-1); }
+  .kpi-item { flex: 1; padding: 16px 24px; border-right: 1px solid var(--border); }
+  .kpi-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); font-family: 'Space Mono', monospace; margin-bottom: 8px; }
+  .kpi-value { font-family: 'Space Mono', monospace; font-size: 28px; font-weight: 700; line-height: 1; }
+
+  /* Tabs */
+  .nav-tabs { display: flex; padding: 0 32px; background: var(--bg-0); }
+  .nav-tab {
+    padding: 16px 32px; font-size: 13px; font-weight: 600; letter-spacing: 1px;
+    text-transform: uppercase; cursor: pointer; border: none; background: transparent;
+    color: var(--text-muted); border-bottom: 3px solid transparent; transition: all 0.2s;
+    font-family: 'Space Mono', monospace;
+  }
+  .nav-tab:hover { color: var(--text-secondary); }
+  .nav-tab.active { color: var(--accent-teal); border-bottom-color: var(--accent-teal); }
+
+  /* Layout & Cards */
+  .main-content { padding: 40px 32px; max-width: 1400px; margin: 0 auto; }
+  .section-title { font-family: 'Poppins', sans-serif; font-size: 32px; font-weight: 600; color: var(--text-primary); margin-bottom: 8px; }
+  .section-subtitle { font-size: 15px; color: var(--text-secondary); margin-bottom: 32px; }
+  
+  .card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px; padding: 24px; backdrop-filter: blur(10px); }
+  .card-title { font-family: 'Space Mono', monospace; font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: var(--accent-teal); margin-bottom: 24px; border-bottom: 1px solid rgba(0,212,170,0.1); padding-bottom: 12px; }
+
+  /* Visuals */
+  .drug-bar-row { display: flex; align-items: center; gap: 16px; margin-bottom: 20px; }
+  .drug-label { width: 120px; font-size: 13px; font-weight: 500; color: var(--text-secondary); text-align: right; }
+  .bar-track { flex: 1; height: 32px; background: rgba(255,255,255,0.05); border-radius: 4px; position: relative; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 1s cubic-bezier(0.4, 0, 0.2, 1); display: flex; align-items: center; justify-content: flex-end; padding-right: 12px; font-family: 'Space Mono'; font-weight: 700; font-size: 12px; color: var(--bg-0); }
+  
+  .cluster-btn { width: 100%; padding: 16px; border-radius: 8px; border: 1px solid var(--border); background: var(--bg-1); cursor: pointer; text-align: left; transition: all 0.2s; margin-bottom: 12px; color: var(--text-primary); }
+  .cluster-btn:hover { border-color: var(--accent-teal); background: rgba(0,212,170,0.05); }
+
+  /* Form Elements */
+  input[type="range"] { -webkit-appearance: none; width: 100%; height: 6px; background: var(--bg-2); border-radius: 3px; outline: none; margin-top: 12px; }
+  input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 20px; height: 20px; border-radius: 50%; background: var(--accent-teal); cursor: pointer; }
+  
+  select { width: 100%; padding: 12px; background: var(--bg-2); color: white; border: 1px solid var(--border); border-radius: 8px; font-family: 'Inter'; font-size: 14px; margin-top: 8px; outline: none; }
+  
+  .toggle-switch { width: 50px; height: 28px; background: var(--bg-2); border-radius: 14px; position: relative; border: 1px solid var(--border); cursor: pointer; }
+  .toggle-switch.on { background: rgba(255,107,53,0.2); border-color: var(--accent-orange); }
+  .toggle-thumb { width: 20px; height: 20px; border-radius: 50%; background: var(--text-secondary); position: absolute; top: 3px; left: 3px; transition: all 0.3s; }
+  .toggle-switch.on .toggle-thumb { left: 25px; background: var(--accent-orange); }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script type="text/babel">
+const { useState, useEffect, useMemo } = React;
+const { RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } = Recharts;
+
+// ─── FINAL SYNCED DATA ───────────────────────────────────────────────────────
+const PRR_DATA = [
+  { drug: 'Semaglutide', prr: 2.566, n: 61976,  signal: true,  color: '#FF6B35' }, // Orange for Signal
+  { drug: 'Liraglutide', prr: 2.116, n: 6738,   signal: true,  color: '#FF6B35' },
+  { drug: 'Dulaglutide', prr: 1.441, n: 23579,  signal: false, color: '#00D4AA' }, // Teal for Baseline
+  { drug: 'Tirzepatide', prr: 1.010, n: 136324, signal: false, color: '#00D4AA' },
+  { drug: 'Exenatide',   prr: 0.284, n: 2990,   signal: false, color: '#162A50' },
+];
+
+// PERFECT MATCH TO RESULTS_LATEST.MD
+const CLUSTERS = [
+  { id: 0, name: 'Moderate-Risk Active', n: 76791,  color: '#00D4AA', age: 0.50, weight: 0.65, polypharmacy: 0.20, opioid: 0.10, desc: 'Represents the typical GLP-1 patient. Mid-age with elevated BMI and moderate polypharmacy.' },
+  { id: 1, name: 'Low-Risk Stable',      n: 115606, color: '#8BAFC8', age: 0.35, weight: 0.30, polypharmacy: 0.05, opioid: 0.05, desc: 'Largest cluster. Very low polypharmacy burden and rare opioid co-prescriptions. Minimal GI risk.' },
+  { id: 2, name: 'Critical Risk',        n: 2718,   color: '#FF6B35', age: 0.80, weight: 0.85, polypharmacy: 0.95, opioid: 1.00, desc: 'THE DANGER ZONE. Small but critical cluster with the highest severity rate. 100% opioid co-prescription and extreme polypharmacy.' },
+  { id: 3, name: 'High-Risk Vulnerable', n: 4543,   color: '#FFD166', age: 0.70, weight: 0.55, polypharmacy: 0.60, opioid: 0.90, desc: 'Concentrated opioid co-prescriptions define this cluster. High baseline vulnerability.' },
+  { id: 4, name: 'Very High-Risk Complex',n: 7316,  color: '#EF476F', age: 0.90, weight: 0.70, polypharmacy: 0.90, opioid: 0.60, desc: 'Complex patients — extreme polypharmacy driven by multi-morbidity. Careful medication reconciliation warranted.' },
+];
+
+const DRUG_PRR_MAP = { 'Semaglutide': 2.566, 'Liraglutide': 2.116, 'Dulaglutide': 1.441, 'Tirzepatide': 1.010, 'Exenatide': 0.284, 'Control / Baseline': 1.0 };
+function fmt(n) { return n.toLocaleString(); }
+
+// ─── VIEWS ───────────────────────────────────────────────────────────────────
+function OverviewView() {
+  const [anim, setAnim] = useState(false);
+  useEffect(() => { setTimeout(() => setAnim(true), 100); }, []);
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 400px', gap: '32px' }}>
+      <div className="card">
+        <div className="card-title">Disproportionality: PRR Signal Detection</div>
+        <div style={{ position: 'relative', marginTop: '20px', paddingBottom: '30px' }}>
+          {/* WHO Threshold Line */}
+          <div style={{ position: 'absolute', left: '136px', right: 0, top: '-10px', bottom: 0, pointerEvents: 'none' }}>
+            <div style={{ position: 'absolute', left: '66.6%', top: 0, bottom: 0, width: '2px', background: 'var(--accent-orange)', zIndex: 10, borderLeft: '2px dashed var(--accent-orange)' }} />
+            <div style={{ position: 'absolute', left: '66.6%', top: '-20px', transform: 'translateX(-50%)', fontSize: '10px', color: 'var(--accent-orange)', fontFamily: 'Space Mono', fontWeight: 700 }}>WHO THRESHOLD (2.0)</div>
+          </div>
+          
+          {PRR_DATA.map((d) => (
+            <div key={d.drug} className="drug-bar-row">
+              <div className="drug-label">{d.drug}</div>
+              <div className="bar-track">
+                <div className="bar-fill" style={{ width: anim ? Math.min((d.prr / 3.0) * 100, 100) + '%' : '0%', background: d.color }}>
+                  {d.prr.toFixed(3)}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+        <div className="card">
+          <div className="card-title">Final Model Metrics</div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            {[
+              ["Random Forest (Threshold 0.15)", "0.8438", "96.39%", "var(--accent-orange)"],
+              ["Decision Tree (Pruned)", "0.7879", "69.02%", "var(--accent-teal)"],
+              ["Logistic Regression", "0.8111", "63.07%", "var(--text-muted)"],
+            ].map(([k, auc, recall, color]) => (
+              <div key={k} style={{ borderBottom: '1px solid var(--border)', paddingBottom: '8px' }}>
+                <div style={{ fontSize: '12px', color: 'var(--text-primary)', fontWeight: 500, marginBottom: '4px' }}>{k}</div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Space Mono', fontSize: '11px', color }}>
+                  <span>AUC: {auc}</span><span style={{ fontWeight: 700 }}>Recall: {recall}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function PhenotypesView() {
+  const [sel, setSel] = useState(2); // Default to Critical Risk
+  const cluster = CLUSTERS.find(c => c.id === sel);
+  const radarData = [
+    { axis: 'Age Factor', value: cluster.age, fullMark: 1 },
+    { axis: 'Weight Factor', value: cluster.weight, fullMark: 1 },
+    { axis: 'Polypharmacy', value: cluster.polypharmacy, fullMark: 1 },
+    { axis: 'Opioid Use', value: cluster.opioid, fullMark: 1 },
+  ];
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '320px 1fr', gap: '32px', alignItems: 'start' }}>
+      <div>
+        {CLUSTERS.map(c => (
+          <button key={c.id} className="cluster-btn" style={sel === c.id ? { borderColor: c.color, background: 'var(--bg-2)' } : {}} onClick={() => setSel(c.id)}>
+            <div style={{ fontSize: '14px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <span style={{ width: '10px', height: '10px', borderRadius: '50%', background: c.color }} />
+              Cluster {c.id}
+            </div>
+            <div style={{ fontSize: '12px', color: 'var(--text-muted)' }}>{c.name} (n = {fmt(c.n)})</div>
+          </button>
+        ))}
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div className="card" style={{ borderColor: cluster.color, background: 'var(--bg-1)' }}>
+          <h2 style={{ fontFamily: 'Poppins', fontSize: '28px', color: cluster.color, marginBottom: '8px' }}>{cluster.name}</h2>
+          <p style={{ fontSize: '15px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>{cluster.desc}</p>
+        </div>
+
+        <div className="card" style={{ height: '400px' }}>
+          <div className="card-title">Normalized Feature Footprint</div>
+          <ResponsiveContainer width="100%" height="100%">
+            <RadarChart data={radarData} margin={{ top: 20, right: 40, bottom: 20, left: 40 }}>
+              <PolarGrid stroke="var(--border)" />
+              <PolarAngleAxis dataKey="axis" tick={{ fill: 'var(--text-secondary)', fontSize: 12, fontFamily: 'Space Mono' }} />
+              <PolarRadiusAxis angle={90} domain={[0, 1]} tick={false} axisLine={false} />
+              <Radar name={cluster.name} dataKey="value" stroke={cluster.color} fill={cluster.color} fillOpacity={0.3} strokeWidth={2} />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function SimulatorView() {
+  const [age, setAge] = useState(55);
+  const [weight, setWeight] = useState(90);
+  const [poly, setPoly] = useState(2);
+  const [opioid, setOpioid] = useState(false);
+  const [drug, setDrug] = useState('Semaglutide');
+
+  // Approximation algorithm based on RF Feature Importances (for demo purposes)
+  const score = useMemo(() => {
+    let s = DRUG_PRR_MAP[drug] ?? 1.0;
+    if (opioid) s += 1.5; // Heavy penalty for the "Motility Trap"
+    if (poly > 5) s += (poly - 5) * 0.15;
+    if (weight > 95) s += 0.2;
+    if (age > 65) s += 0.3;
+    return parseFloat(s.toFixed(2));
+  }, [drug, opioid, poly, weight, age]);
+
+  const risk = score >= 3.0 ? { l: 'CRITICAL', c: 'var(--accent-orange)' } :
+               score >= 2.0 ? { l: 'HIGH', c: '#EF476F' } :
+               score >= 1.5 ? { l: 'MODERATE', c: 'var(--accent-yellow)' } :
+                              { l: 'BASELINE', c: 'var(--accent-teal)' };
+
+  return (
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px' }}>
+      <div className="card" style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
+        <div className="card-title">Patient Parameters</div>
+        
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Space Mono', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+            <span>Age (Years)</span><span style={{ color: 'white', fontWeight: 700 }}>{age}</span>
+          </div>
+          <input type="range" min="18" max="90" value={age} onChange={e => setAge(+e.target.value)} />
+        </div>
+
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Space Mono', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+            <span>Weight (kg)</span><span style={{ color: 'white', fontWeight: 700 }}>{weight}</span>
+          </div>
+          <input type="range" min="40" max="150" value={weight} onChange={e => setWeight(+e.target.value)} />
+        </div>
+
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontFamily: 'Space Mono', fontSize: '12px', color: 'var(--text-secondary)', marginBottom: '8px' }}>
+            <span>Polypharmacy (Concurrent Meds)</span><span style={{ color: 'white', fontWeight: 700 }}>{poly}</span>
+          </div>
+          <input type="range" min="0" max="20" value={poly} onChange={e => setPoly(+e.target.value)} />
+        </div>
+
+        <div>
+          <div style={{ fontFamily: 'Space Mono', fontSize: '12px', color: 'var(--text-secondary)' }}>Target Agent</div>
+          <select value={drug} onChange={e => setDrug(e.target.value)}>
+            {Object.keys(DRUG_PRR_MAP).map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-1)', padding: '16px', borderRadius: '8px', border: '1px solid var(--border)' }}>
+          <div>
+            <div style={{ fontWeight: 600, color: 'var(--text-primary)', fontSize: '14px' }}>Concurrent Opioids</div>
+            <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Flag for motility-trap interaction</div>
+          </div>
+          <div className={`toggle-switch ${opioid ? 'on' : ''}`} onClick={() => setOpioid(!opioid)}>
+            <div className="toggle-thumb" />
+          </div>
+        </div>
+      </div>
+
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <div className="card" style={{ flexGrow: 1, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', border: `2px solid ${risk.c}`, background: 'var(--bg-1)' }}>
+          <div style={{ fontFamily: 'Space Mono', fontSize: '14px', letterSpacing: '2px', color: 'var(--text-muted)', marginBottom: '16px' }}>RELATIVE RISK SCORE</div>
+          <div style={{ fontFamily: 'Space Mono', fontSize: '96px', fontWeight: 700, color: risk.c, lineHeight: 1, marginBottom: '24px' }}>{score.toFixed(1)}</div>
+          <div style={{ padding: '8px 24px', borderRadius: '24px', background: `${risk.c}20`, color: risk.c, fontWeight: 700, letterSpacing: '1px', fontSize: '14px' }}>
+            {risk.l} SEVERITY RISK
+          </div>
+        </div>
+        <div style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', background: 'var(--bg-1)', padding: '16px', borderRadius: '8px' }}>
+          * For demonstration purposes. Simulator heuristic approximates the Random Forest threshold tuning logic (Recall: 96.4%). Not for clinical decision making.
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── APP ─────────────────────────────────────────────────────────────────────
+function App() {
+  const [tab, setTab] = useState(2); // Defaulting to Simulator for the "Live Demo" feel
+  const tabs = ['01 Signal Detection', '02 Patient Phenotypes', '03 Risk Simulator'];
+
+  return (
+    <div>
+      <div className="header">
+        <div className="header-top">
+          <div className="logo-area">
+            <div className="logo-pill">FAERS</div>
+            <div className="logo-text">
+              <h1>GLP-1 PHARMACOVIGILANCE DASHBOARD</h1>
+              <p>FDA Data 2023Q1 – 2026Q1 · CMPE 255</p>
+            </div>
+          </div>
+        </div>
+        <div className="kpi-strip">
+           <div className="kpi-item"><div className="kpi-label">Analyzed Cases</div><div className="kpi-value" style={{color: 'white'}}>367,883</div></div>
+           <div className="kpi-item"><div className="kpi-label">GLP-1 Cohort</div><div className="kpi-value" style={{color: 'var(--accent-teal)'}}>206,974</div></div>
+           <div className="kpi-item"><div className="kpi-label">Severe GI Events</div><div className="kpi-value" style={{color: 'var(--accent-orange)'}}>7,303</div></div>
+           <div className="kpi-item"><div className="kpi-label">Overall Severity Flag</div><div className="kpi-value" style={{color: 'var(--accent-rose)'}}>98,131</div></div>
+        </div>
+        <div className="nav-tabs">
+          {tabs.map((t, i) => (
+            <button key={i} className={`nav-tab ${tab === i ? 'active' : ''}`} onClick={() => setTab(i)}>{t}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="main-content">
+        <div className="section-title">{tabs[tab].substring(3)}</div>
+        <div className="section-subtitle">Real-time exploration of the final data mining artifacts.</div>
+        
+        <div style={{ display: tab === 0 ? 'block' : 'none' }}><OverviewView /></div>
+        <div style={{ display: tab === 1 ? 'block' : 'none' }}><PhenotypesView /></div>
+        <div style={{ display: tab === 2 ? 'block' : 'none' }}><SimulatorView /></div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>
